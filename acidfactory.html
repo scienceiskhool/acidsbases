@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Acid Reaction Assembly Line</title>
+    <!-- Tailwind CSS for high-quality layout styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS Excel Parser Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        /* Custom smooth scaling for keyboard keys and select pills */
+        .interactive-scale {
+            transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
+        }
+        .interactive-scale:active {
+            transform: scale(0.95);
+        }
+        sub {
+            font-size: 0.65em;
+            bottom: -0.15em;
+            margin-left: 0.05em;
+            margin-right: 0.05em;
+        }
+        /* Shake animation for incorrect answer feedback */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.3s ease-in-out;
+        }
+        /* Conveyor crate animation styling */
+        .crate-glow {
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+        }
+        .crate-glow-warning {
+            filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8));
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <!-- HEADER & STAGE INDICATOR BAR -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 sticky top-0 z-45 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                <i data-lucide="beaker" class="w-6 h-6 text-emerald-400 animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold tracking-tight md:text-xl text-emerald-400 flex items-center gap-1.5">
+                    Reaction Assembly Line
+                    <span id="header-stage-badge" class="hidden text-[10px] uppercase tracking-wider bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/20">Stage 1</span>
+                </h1>
+                <p class="text-[10px] md:text-xs text-slate-400">Secondary 3 Chemistry Practice Laboratory</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <button id="btn-fullscreen" class="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg transition-all flex items-center justify-center shadow-inner" title="Toggle Fullscreen">
+                <i data-lucide="maximize" class="w-5 h-5" id="icon-fullscreen"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN FRAME CONTAINER -->
+    <main class="flex-1 flex flex-col justify-center items-center px-4 py-4 w-full max-w-4xl mx-auto relative">
+        
+        <!-- START SCREEN -->
+        <div id="screen-start" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl text-center space-y-6 max-w-lg transition-all transform">
+            <div class="space-y-2">
+                <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg">
+                    <i data-lucide="dna" class="w-8 h-8 text-emerald-400 animate-pulse"></i>
+                </div>
+                <h2 class="text-2xl md:text-3xl font-black tracking-tight text-white">Chemical Dispatcher</h2>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    Test your understanding of standard acid reactions across two high-fidelity stages. Keep track of the moving crate on the assembly belt!
+                </p>
+            </div>
+
+            <!-- EXCEL INTEGRATION STATUS PANEL -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-left space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-emerald-400 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                        <i data-lucide="database" class="w-3.5 h-3.5"></i> Custom Excel Datasets
+                    </span>
+                    <span class="text-[10px] bg-slate-800 px-2 py-0.5 text-slate-400 rounded">Auto-Scan Active</span>
+                </div>
+                
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800/60">
+                        <span class="text-slate-300 flex items-center gap-1.5 font-mono">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i> Acid_Reactions_40.xlsx
+                        </span>
+                        <span id="word-file-status" class="text-slate-400 font-semibold text-[10px] animate-pulse">Scanning file...</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800/60">
+                        <span class="text-slate-300 flex items-center gap-1.5 font-mono">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-cyan-500"></i> Acid_Reactions_40_Formulae.xlsx
+                        </span>
+                        <span id="formula-file-status" class="text-slate-400 font-semibold text-[10px] animate-pulse">Scanning file...</span>
+                    </div>
+                </div>
+
+                <!-- DRAG & DROP ZONE -->
+                <div id="dropzone" class="border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950 hover:bg-slate-900/40 rounded-xl p-4 text-center cursor-pointer transition-all duration-150">
+                    <input type="file" id="file-uploader" class="hidden" multiple accept=".xlsx,.xls">
+                    <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-500 mx-auto mb-1.5"></i>
+                    <p class="text-[11px] text-slate-400 font-medium">Drag & Drop Excel sheets to import custom reactions</p>
+                </div>
+            </div>
+
+            <!-- Two-Stage Visual Map -->
+            <div class="grid grid-cols-2 gap-3 text-left">
+                <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block">Stage 1: Words</span>
+                    <h3 class="text-xs font-bold text-slate-200">Salt Typing</h3>
+                    <p class="text-[11px] text-slate-400 leading-tight font-medium">Type the correct salt name before the box leaves the conveyor belt!</p>
+                </div>
+                <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
+                    <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-widest block">Stage 2: Formulas</span>
+                    <h3 class="text-xs font-bold text-slate-200">Multi-Select Products</h3>
+                    <p class="text-[11px] text-slate-400 leading-tight font-medium">Select all products formed before the crate enters the receiver terminal!</p>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <div class="flex justify-between items-center px-4 py-2.5 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+                    <span class="text-slate-400 font-semibold flex items-center gap-1.5">
+                        <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+                        Laboratory Record (High Score):
+                    </span>
+                    <span id="txt-high-score" class="text-amber-400 font-bold text-sm">0</span>
+                </div>
+
+                <button id="btn-start" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-base rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                    Open Lab Shift
+                    <i data-lucide="play-circle" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <p class="text-slate-600 text-[10px] font-medium tracking-wide">created by Ms Khoo Xiang Yun & HTML game creator</p>
+        </div>
+
+        <!-- STAGE INTRO OVERLAYS -->
+        <div id="screen-stage-intro" class="w-full hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center space-y-6 max-w-lg transition-all transform duration-300">
+            <div class="space-y-2">
+                <div id="intro-badge" class="inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest">Stage 1</div>
+                <h3 id="intro-title" class="text-2xl font-black text-white">Stage Title</h3>
+                <p id="intro-desc" class="text-slate-400 text-sm leading-relaxed">Stage Description Goes Here.</p>
+            </div>
+            <div id="intro-syllabus-hint" class="bg-slate-950/60 p-4 rounded-xl text-xs text-left text-slate-300 border border-slate-800 space-y-2">
+                <!-- Dynamic stage specific reminders -->
+            </div>
+            <button id="btn-proceed-stage" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1">
+                Begin Assembly
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- PLAYING CONTAINER -->
+        <div id="screen-playing" class="w-full hidden flex-col space-y-4">
+            
+            <!-- TOP BAR PROGRESS STATS -->
+            <div class="grid grid-cols-3 gap-3 w-full">
+                <!-- Score Indicator -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between shadow-md relative overflow-hidden">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i>
+                        Score
+                    </span>
+                    <div class="flex items-baseline space-x-1.5 mt-1">
+                        <span id="txt-score" class="text-xl md:text-2xl font-black text-white">0</span>
+                        <span id="txt-multiplier" class="text-[10px] font-bold text-emerald-400 hidden bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">1x Combo</span>
+                    </div>
+                </div>
+
+                <!-- Global Shift Timer -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between shadow-md">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-rose-400"></i>
+                        Shift Timer
+                    </span>
+                    <div class="mt-1 flex flex-col space-y-1">
+                        <span id="txt-timer" class="text-xl md:text-2xl font-black text-white">90s</span>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                            <div id="bar-timer" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full w-full transition-all duration-200"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Tracker -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between shadow-md">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-blue-400"></i>
+                        Progress
+                    </span>
+                    <span id="txt-progress" class="text-xl md:text-2xl font-black text-white mt-1">0 / 5</span>
+                </div>
+            </div>
+
+            <!-- IMMERSIVE ASSEMBLY GRAPHIC VIEWPORTS -->
+            <!-- Backed by user-uploaded schematic wallpaper. Custom tracking overlays place moving crate precisely. -->
+            <div class="relative w-full aspect-[2/1] rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl bg-slate-950">
+                <!-- Background visual frame -->
+                <img src="ChatGPT Image Jul 15, 2026, 08_50_21 AM.png" alt="Conveyor Belt Backdrop" class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none opacity-85">
+                
+                <!-- Assembly Line Title overlay screen -->
+                <div class="absolute top-[2%] left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-950/80 border border-emerald-500/30 rounded-md text-[10px] md:text-xs text-center uppercase tracking-widest font-black text-emerald-400 shadow-inner max-w-[80%] whitespace-nowrap overflow-hidden text-ellipsis">
+                    <span id="lbl-belt-status">Status: Belt Operational</span>
+                </div>
+
+                <!-- DYNAMIC LAB MONITOR HOLOGRAPHIC EQUATION BOARD -->
+                <div id="target-equation-container" class="absolute top-[16%] left-1/2 -translate-x-1/2 w-[70%] max-w-xl bg-slate-950/90 border border-cyan-500/40 rounded-xl p-2.5 md:p-3 flex flex-col items-center justify-center space-y-1.5 shadow-lg shadow-cyan-950/20">
+                    <span id="txt-equation-prompt-header" class="text-[8px] md:text-[10px] bg-cyan-950/60 border border-cyan-800 px-2 py-0.5 rounded-full text-cyan-300 font-bold uppercase tracking-wider">Loading Equation...</span>
+                    <div id="equation-box" class="flex flex-wrap items-center justify-center gap-1 md:gap-2 text-[10px] sm:text-xs md:text-sm font-extrabold text-center px-1 text-slate-200">
+                        <!-- Formulas or word blocks populate dynamically here -->
+                    </div>
+                </div>
+
+                <!-- CRATE PHYSICAL ASSEMBLY LINE TRACK OVERLAY -->
+                <!-- Spans exactly on top of the illustrated conveyor graphics (around 74% vertical) -->
+                <div class="absolute top-[70%] left-[10%] w-[80%] h-[12%] pointer-events-none">
+                    <!-- Moving Crate Package -->
+                    <div id="conveyor-crate" class="absolute top-0 left-0 w-12 h-12 md:w-16 md:h-16 -translate-y-4 md:-translate-y-6 transition-all duration-100 ease-linear flex flex-col items-center justify-center pointer-events-none">
+                        
+                        <!-- Mini Timer Floating Indicator -->
+                        <div class="bg-rose-600 text-white text-[8px] md:text-[10px] font-black px-1.5 py-0.5 rounded shadow border border-rose-400 animate-bounce mb-1">
+                            <span id="txt-crate-timer">15s</span>
+                        </div>
+                        
+                        <!-- Advanced high-tech box SVG icon -->
+                        <svg class="w-8 h-8 md:w-11 md:h-11 text-emerald-400 crate-glow" id="svg-crate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE INPUT MODULE (STAGE SWITCHED) -->
+            <div class="w-full">
+                <!-- STAGE 1 AREA: Word Typing Salt Formed -->
+                <div id="module-stage-1" class="hidden flex flex-col space-y-3">
+                    <div class="flex justify-between items-center px-1">
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
+                            <i data-lucide="keyboard" class="w-4 h-4 text-emerald-400"></i>
+                            Type Salt Name
+                        </span>
+                        <span class="text-[10px] text-slate-500 italic">Determine salt from acid and reactant name</span>
+                    </div>
+
+                    <!-- Custom Typed Answer Screen Container -->
+                    <div class="bg-slate-950 border-2 border-slate-800 rounded-xl p-3 flex items-center justify-between min-h-[50px] shadow-inner">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+                            <span id="txt-input-display" class="text-sm md:text-base font-bold text-slate-100 tracking-wide select-text"></span>
+                        </div>
+                        <button id="btn-input-clear" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-slate-200 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Compact QWERTY Virtual Keyboard Layout for Touch Performance -->
+                    <div id="virtual-keyboard" class="bg-slate-900 border border-slate-800 rounded-2xl p-2 md:p-3 shadow-lg grid grid-cols-1 gap-1.5">
+                        <!-- Custom rows rendering via JS loop -->
+                    </div>
+                </div>
+
+                <!-- STAGE 2 AREA: Chemical Formulas (Multi-select conveyor) -->
+                <div id="module-stage-2" class="hidden flex flex-col space-y-3">
+                    <div class="flex justify-between items-center px-1">
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                            <i data-lucide="package" class="w-4 h-4 text-cyan-400"></i>
+                            Conveyor Belt Products (Multi-Select)
+                        </span>
+                        <span class="text-[10px] text-slate-500 italic">Select all products, then dispatch</span>
+                    </div>
+
+                    <div id="conveyor-belt" class="bg-gradient-to-b from-slate-950 to-slate-900 border-2 border-slate-800 rounded-2xl p-4 min-h-[140px] grid grid-cols-2 gap-2.5 md:grid-cols-4 items-center justify-center relative shadow-inner">
+                        <!-- Multi-select option pills loaded dynamically -->
+                    </div>
+
+                    <button id="btn-submit-multiselect" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                        Dispatch Products <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- FEEDBACK TEXT FLOATER -->
+            <div id="feedback-overlay" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center transition-all duration-200 opacity-0 transform scale-75">
+                <div id="feedback-card" class="px-6 py-3.5 rounded-2xl shadow-2xl text-xl font-extrabold border flex items-center gap-2">
+                    <span id="feedback-icon"></span>
+                    <span id="feedback-text">CORRECT</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RESULTS OVERALL REPORT -->
+        <div id="screen-result" class="w-full hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl text-center space-y-6 max-w-lg transition-all transform duration-300">
+            <div class="space-y-2">
+                <div id="result-icon-container" class="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="bar-chart-2" class="w-10 h-10 text-emerald-400"></i>
+                </div>
+                <h2 class="text-2xl md:text-3xl font-black tracking-tight text-white">Shift Evaluation Complete!</h2>
+                <p id="txt-result-evaluation" class="text-slate-400 text-sm px-2 leading-relaxed">
+                    Analyzing chemistry proficiency output vectors...
+                </p>
+            </div>
+
+            <!-- Detailed Stats Table -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl divide-y divide-slate-800/60 text-xs overflow-hidden">
+                <div class="flex justify-between items-center p-3.5">
+                    <span class="text-slate-400 flex items-center gap-2">
+                        <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+                        Final Score Earned
+                    </span>
+                    <span id="txt-final-score" class="font-black text-white text-sm">0</span>
+                </div>
+                <div class="flex justify-between items-center p-3.5">
+                    <span class="text-slate-400 flex items-center gap-2">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                        Correct Items Checked
+                    </span>
+                    <span id="txt-final-accuracy" class="font-black text-emerald-400 text-sm">0 / 10</span>
+                </div>
+                <div class="flex justify-between items-center p-3.5">
+                    <span class="text-slate-400 flex items-center gap-2">
+                        <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                        Highest Combo Streak
+                    </span>
+                    <span id="txt-final-streak" class="font-black text-cyan-400 text-sm">0</span>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button id="btn-restart" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-base rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                    Run Another Shift 
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER META -->
+    <footer class="text-center py-4 border-t border-slate-900 text-xs text-slate-600 font-medium tracking-wide bg-slate-950/40">
+        Created by Ms Khoo Xiang Yun
+    </footer>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="mini-toast" class="fixed top-20 right-4 bg-slate-900 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-lg shadow-2xl z-50 transform translate-x-80 opacity-0 transition-all duration-300 text-xs font-semibold flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-text">File parsed successfully!</span>
+    </div>
+
+    <!-- CONFETTI CANVAS INTERACTIVE CANVAS -->
+    <canvas id="canvas-confetti" class="fixed inset-0 pointer-events-none z-50 w-full h-full hidden"></canvas>
+
+    <!-- GAME CODE ENGINE (JAVASCRIPT) -->
+    <script>
+        // --- POOL DATA: ACID REACTION SYLLABUS SCHEMAS (FALLBACK DATA POOL) ---
+        let STAGE1_QUESTIONS = [
+            {
+                acid: "Hydrochloric acid",
+                reactant: "Sodium hydroxide",
+                saltName: "Sodium chloride",
+                accepted: ["sodium chloride", "sodiumchloride", "nacl"]
+            },
+            {
+                acid: "Sulfuric acid",
+                reactant: "Zinc granules",
+                saltName: "Zinc sulfate",
+                accepted: ["zinc sulfate", "zincsulfate", "znso4"]
+            },
+            {
+                acid: "Nitric acid",
+                reactant: "Calcium carbonate",
+                saltName: "Calcium nitrate",
+                accepted: ["calcium nitrate", "calciumnitrate", "ca(no3)2"]
+            },
+            {
+                acid: "Hydrochloric acid",
+                reactant: "Magnesium oxide",
+                saltName: "Magnesium chloride",
+                accepted: ["magnesium chloride", "magnesiumchloride", "mgcl2"]
+            },
+            {
+                acid: "Sulfuric acid",
+                reactant: "Copper(II) carbonate",
+                saltName: "Copper(II) sulfate",
+                accepted: ["copper(ii) sulfate", "coppersulfate", "copper ii sulfate", "copper sulfate", "cuso4"]
+            }
+        ];
+
+        let STAGE2_QUESTIONS = [
+            {
+                reactantA: "HCl (aq)",
+                reactantB: "NaOH (aq)",
+                correctProducts: ["NaCl", "H2O"],
+                allOptions: ["NaCl", "H2O", "H2", "NaOH", "Cl2", "Na2O"]
+            },
+            {
+                reactantA: "H2SO4 (aq)",
+                reactantB: "Zn (s)",
+                correctProducts: ["ZnSO4", "H2"],
+                allOptions: ["ZnSO4", "H2", "H2O", "SO2", "ZnO", "O2"]
+            },
+            {
+                reactantA: "2HNO3 (aq)",
+                reactantB: "CaCO3 (s)",
+                correctProducts: ["Ca(NO3)2", "H2O", "CO2"],
+                allOptions: ["Ca(NO3)2", "H2O", "CO2", "H2", "Ca(NO3)", "O2"]
+            },
+            {
+                reactantA: "2HCl (aq)",
+                reactantB: "MgCO3 (s)",
+                correctProducts: ["MgCl2", "H2O", "CO2"],
+                allOptions: ["MgCl2", "H2O", "CO2", "H2", "Cl2", "Mg(OH)2"]
+            },
+            {
+                reactantA: "H2SO4 (aq)",
+                reactantB: "CuO (s)",
+                correctProducts: ["CuSO4", "H2O"],
+                allOptions: ["CuSO4", "H2O", "H2", "SO2", "CuO2", "O2"]
+            }
+        ];
+
+        // --- CORE GAME CONTROLLER STATE ---
+        let gameState = {
+            screen: "start", // start | stage_intro | playing | result
+            stage: 1, // 1 | 2
+            score: 0,
+            streak: 0,
+            maxStreak: 0,
+            questionsAttempted: 0,
+            correctAnswersCount: 0,
+            currentQIndex: 0,
+            timeLeft: 90,
+            timerInterval: null,
+            
+            // Sub stage states
+            stage1TypedAnswer: "",
+            stage2Selections: [], // list of active formulas
+
+            // Crate conveyor movement physics states
+            cratePos: 0, // 0 to 100 percent
+            crateTimeLeft: 15, // seconds for current crate to transit
+            crateTimerInterval: null,
+            cratePaused: false
+        };
+
+        // --- DYNAMIC EXCEL PARSER SYSTEM ---
+        function updateStatusUI(elementId, text, colorClass) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.innerText = text;
+                el.className = `font-semibold text-[10px] ${colorClass}`;
+            }
+        }
+
+        function triggerMiniToast(message, isSuccess = true) {
+            const toast = document.getElementById("mini-toast");
+            const toastTxt = document.getElementById("toast-text");
+            toastTxt.innerText = message;
+            toast.className = `fixed top-20 right-4 border text-slate-100 px-4 py-2.5 rounded-lg shadow-2xl z-50 transform translate-x-0 opacity-100 transition-all duration-300 text-xs font-semibold flex items-center gap-2 ${isSuccess ? 'bg-slate-900 border-emerald-500' : 'bg-slate-900 border-rose-500'}`;
+            setTimeout(() => {
+                toast.classList.add("translate-x-80", "opacity-0");
+            }, 3000);
+        }
+
+        // Parse Word Excel (Acid_Reactions_40.xlsx)
+        function parseWordExcel(workbook) {
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet);
+            
+            return json.map(row => {
+                const findVal = (prefixes) => {
+                    const key = Object.keys(row).find(k => prefixes.some(p => k.toLowerCase().includes(p)));
+                    return key ? row[key] : null;
+                };
+                
+                const acid = findVal(['acid', 'reactant a', 'reactant_a']) || "Hydrochloric acid";
+                const reactant = findVal(['reactant', 'reactant b', 'reactant_b']) || "Sodium hydroxide";
+                const saltName = findVal(['salt', 'salt name', 'salt_name', 'product']) || "Sodium chloride";
+                const acceptedVal = findVal(['accepted', 'variants', 'answers']);
+                
+                let accepted = [];
+                if (acceptedVal) {
+                    accepted = String(acceptedVal).split(',').map(s => s.trim().toLowerCase());
+                } else {
+                    const normalized = saltName.trim().toLowerCase();
+                    accepted.push(normalized);
+                    accepted.push(normalized.replace(/\s+/g, ''));
+                    if (normalized.includes('(ii)')) {
+                        accepted.push(normalized.replace('(ii)', ' ii'));
+                        accepted.push(normalized.replace('(ii)', ''));
+                        accepted.push(normalized.replace('(ii)', '').replace(/\s+/g, ''));
+                    }
+                }
+                
+                return {
+                    acid: acid,
+                    reactant: reactant,
+                    saltName: saltName,
+                    accepted: accepted
+                };
+            });
+        }
+
+        // Parse Formula Excel (Acid_Reactions_40_Formulae.xlsx)
+        function parseFormulaExcel(workbook) {
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet);
+            
+            return json.map(row => {
+                const findVal = (prefixes) => {
+                    const key = Object.keys(row).find(k => prefixes.some(p => k.toLowerCase().includes(p)));
+                    return key ? row[key] : null;
+                };
+                
+                const reactantA = findVal(['reactant a', 'reactant_a', 'acid formula', 'acid']) || "HCl";
+                const reactantB = findVal(['reactant b', 'reactant_b', 'reactant formula', 'reactant']) || "NaOH";
+                
+                const correctVal = findVal(['correct products', 'correct_products', 'products', 'correct']);
+                const optionsVal = findVal(['all options', 'all_options', 'options', 'choices']);
+                
+                let correctProducts = [];
+                if (correctVal) {
+                    correctProducts = String(correctVal).split(',').map(s => s.trim());
+                } else {
+                    correctProducts = ["NaCl", "H2O"];
+                }
+                
+                let allOptions = [];
+                if (optionsVal) {
+                    allOptions = String(optionsVal).split(',').map(s => s.trim());
+                } else {
+                    const distractors = ["H2", "H2O", "CO2", "NaCl", "O2", "NaOH", "Cl2", "Mg(OH)2"];
+                    allOptions = Array.from(new Set([...correctProducts, ...distractors])).slice(0, 6);
+                }
+                
+                return {
+                    reactantA: reactantA,
+                    reactantB: reactantB,
+                    correctProducts: correctProducts,
+                    allOptions: allOptions
+                };
+            });
+        }
+
+        // AUTOMATIC DISK SCAN AT STARTUP
+        async function autoScanDatabases() {
+            // Attempt auto-scanning Acid_Reactions_40.xlsx
+            try {
+                const res1 = await fetch('Acid_Reactions_40.xlsx');
+                if (res1.ok) {
+                    const buf1 = await res1.arrayBuffer();
+                    const wb1 = XLSX.read(buf1, {type: 'array'});
+                    const parsed1 = parseWordExcel(wb1);
+                    if (parsed1.length > 0) {
+                        STAGE1_QUESTIONS = parsed1;
+                        updateStatusUI('word-file-status', `✓ Loaded ${parsed1.length} rows (S1)`, 'text-emerald-400');
+                    }
+                } else {
+                    updateStatusUI('word-file-status', 'Default syllabus pre-loaded', 'text-amber-400');
+                }
+            } catch (err) {
+                updateStatusUI('word-file-status', 'Default syllabus pre-loaded', 'text-amber-400');
+            }
+
+            // Attempt auto-scanning Acid_Reactions_40_Formulae.xlsx
+            try {
+                const res2 = await fetch('Acid_Reactions_40_Formulae.xlsx');
+                if (res2.ok) {
+                    const buf2 = await res2.arrayBuffer();
+                    const wb2 = XLSX.read(buf2, {type: 'array'});
+                    const parsed2 = parseFormulaExcel(wb2);
+                    if (parsed2.length > 0) {
+                        STAGE2_QUESTIONS = parsed2;
+                        updateStatusUI('formula-file-status', `✓ Loaded ${parsed2.length} rows (S2)`, 'text-cyan-400');
+                    }
+                } else {
+                    updateStatusUI('formula-file-status', 'Default syllabus pre-loaded', 'text-amber-400');
+                }
+            } catch (err) {
+                updateStatusUI('formula-file-status', 'Default syllabus pre-loaded', 'text-amber-400');
+            }
+        }
+
+        // DRAG AND DROP HANDLERS
+        const dropzone = document.getElementById("dropzone");
+        const fileUploader = document.getElementById("file-uploader");
+
+        dropzone.addEventListener("click", () => fileUploader.click());
+        dropzone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropzone.className = "border-2 border-dashed border-emerald-400 bg-slate-900 rounded-xl p-4 text-center cursor-pointer transition-all duration-150";
+        });
+        dropzone.addEventListener("dragleave", () => {
+            dropzone.className = "border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950 hover:bg-slate-900/40 rounded-xl p-4 text-center cursor-pointer transition-all duration-150";
+        });
+        dropzone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropzone.className = "border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950 hover:bg-slate-900/40 rounded-xl p-4 text-center cursor-pointer transition-all duration-150";
+            if (e.dataTransfer.files.length > 0) {
+                handleUploadedFiles(e.dataTransfer.files);
+            }
+        });
+        fileUploader.addEventListener("change", (e) => {
+            if (e.target.files.length > 0) {
+                handleUploadedFiles(e.target.files);
+            }
+        });
+
+        function handleUploadedFiles(files) {
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        if (file.name.toLowerCase().includes('formula')) {
+                            const parsed = parseFormulaExcel(workbook);
+                            if (parsed.length > 0) {
+                                STAGE2_QUESTIONS = parsed;
+                                updateStatusUI('formula-file-status', `✓ Uploaded ${parsed.length} rows`, 'text-cyan-400');
+                                triggerMiniToast(`Imported ${parsed.length} Stage 2 Formulas!`, true);
+                            }
+                        } else {
+                            const parsed = parseWordExcel(workbook);
+                            if (parsed.length > 0) {
+                                STAGE1_QUESTIONS = parsed;
+                                updateStatusUI('word-file-status', `✓ Uploaded ${parsed.length} rows`, 'text-emerald-400');
+                                triggerMiniToast(`Imported ${parsed.length} Stage 1 Words!`, true);
+                            }
+                        }
+                    } catch (err) {
+                        triggerMiniToast(`Error parsing ${file.name}. Ensure valid columns exist.`, false);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // --- SAFE ICON REFRESH HELPER ---
+        function refreshIcons() {
+            try {
+                if (typeof lucide !== 'undefined') {
+                    if (typeof lucide.createIcons === 'function') {
+                        lucide.createIcons();
+                    } else if (typeof lucide.replace === 'function') {
+                        lucide.replace();
+                    }
+                }
+            } catch (e) {
+                console.warn("Lucide icons rendering failed: ", e);
+            }
+        }
+
+        // --- WEB AUDIO SYNTH MUSIC & EFFECTS ---
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    try {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch (e) {
+                        console.warn("Audio Context activation failed.");
+                    }
+                }
+            },
+            playTone(freq, type, duration, gainStart) {
+                this.init();
+                if (!this.ctx) return;
+                try {
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                    const osc = this.ctx.createOscillator();
+                    const gainNode = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gainNode.gain.setValueAtTime(gainStart, this.ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
+                    osc.connect(gainNode);
+                    gainNode.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) { console.error(e); }
+            },
+            correct() {
+                this.playTone(523.25, 'sine', 0.15, 0.25); // C5
+                setTimeout(() => this.playTone(659.25, 'sine', 0.25, 0.25), 80); // E5
+            },
+            wrong() {
+                this.playTone(170, 'sawtooth', 0.35, 0.3);
+            },
+            gameOver() {
+                this.playTone(220, 'sawtooth', 0.2, 0.25);
+                setTimeout(() => this.playTone(147, 'sawtooth', 0.4, 0.25), 150);
+            },
+            fanfare() {
+                const notes = [261.63, 329.63, 392.00, 523.25];
+                notes.forEach((n, idx) => {
+                    setTimeout(() => this.playTone(n, 'triangle', 0.4, 0.2), idx * 110);
+                });
+            }
+        };
+
+        // --- SHUFFLER ---
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // --- CONVERTERS FOR RENDER SUBSCRIPTS ---
+        function parseFormulaMarkup(formula) {
+            // Find numbers following letters and wrap them in subscripts for formulas
+            return formula.replace(/([A-Za-z\)\(])([0-9]+)/g, '$1<sub>$2</sub>');
+        }
+
+        // --- UI RE-ROUTING SCREEN MANAGER ---
+        function updateScreenLayout() {
+            document.getElementById("screen-start").classList.add("hidden");
+            document.getElementById("screen-stage-intro").classList.add("hidden");
+            document.getElementById("screen-playing").classList.add("hidden");
+            document.getElementById("screen-result").classList.add("hidden");
+
+            const stageBadge = document.getElementById("header-stage-badge");
+
+            if (gameState.screen === "start") {
+                document.getElementById("screen-start").classList.remove("hidden");
+                stageBadge.classList.add("hidden");
+                
+                let record = 0;
+                try { record = localStorage.getItem("chem_high_score") || 0; } catch(e) {}
+                document.getElementById("txt-high-score").innerText = record;
+            } 
+            else if (gameState.screen === "stage_intro") {
+                document.getElementById("screen-stage-intro").classList.remove("hidden");
+                stageBadge.classList.add("hidden");
+                configureStageIntro();
+            } 
+            else if (gameState.screen === "playing") {
+                document.getElementById("screen-playing").classList.remove("hidden");
+                stageBadge.classList.remove("hidden");
+                stageBadge.innerText = `Stage ${gameState.stage}`;
+                
+                document.getElementById("module-stage-1").classList.add("hidden");
+                document.getElementById("module-stage-2").classList.add("hidden");
+
+                if (gameState.stage === 1) {
+                    document.getElementById("module-stage-1").classList.remove("hidden");
+                } else {
+                    document.getElementById("module-stage-2").classList.remove("hidden");
+                }
+            } 
+            else if (gameState.screen === "result") {
+                document.getElementById("screen-result").classList.remove("hidden");
+                stageBadge.classList.add("hidden");
+            }
+            refreshIcons();
+        }
+
+        // --- DYNAMIC INTRO STAGE INFO POPULATION ---
+        function configureStageIntro() {
+            const badge = document.getElementById("intro-badge");
+            const title = document.getElementById("intro-title");
+            const desc = document.getElementById("intro-desc");
+            const hintBox = document.getElementById("intro-syllabus-hint");
+
+            if (gameState.stage === 1) {
+                badge.className = "inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest bg-emerald-500/10 text-emerald-300 border border-emerald-500/20";
+                badge.innerText = "Stage 1";
+                title.innerText = "Word Salts Typing Lab";
+                desc.innerText = "You will be presented with standard reactions in word format. Determine and type the name of the salt produced using the keyboard before the crate slides off the belt!";
+                
+                hintBox.innerHTML = `
+                    <span class="text-amber-400 font-bold block mb-1">Remember the naming keys:</span>
+                    <ul class="space-y-1 list-disc list-inside text-slate-300">
+                        <li>Hydrochloric Acid yields <strong class="text-slate-100">Chloride Salts</strong></li>
+                        <li>Sulfuric Acid yields <strong class="text-slate-100">Sulfate Salts</strong></li>
+                        <li>Nitric Acid yields <strong class="text-slate-100">Nitrate Salts</strong></li>
+                    </ul>
+                `;
+            } else {
+                badge.className = "inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest bg-cyan-500/10 text-cyan-300 border border-cyan-500/20";
+                badge.innerText = "Stage 2";
+                title.innerText = "Formula Dispatch Multi-Select";
+                desc.innerText = "We are using formal chemical symbols. Select ALL products of the reaction from the conveyer options before the crate enters the final terminal!";
+                
+                hintBox.innerHTML = `
+                    <span class="text-amber-400 font-bold block mb-1">Look out for all products:</span>
+                    <ul class="space-y-1 list-disc list-inside text-slate-300">
+                        <li>Acids with Carbonates yield <strong class="text-slate-100">Salt + Water + Carbon Dioxide</strong></li>
+                        <li>Acids with Bases yield <strong class="text-slate-100">Salt + Water</strong></li>
+                        <li>Acids with Metals yield <strong class="text-slate-100">Salt + Hydrogen Gas</strong></li>
+                    </ul>
+                `;
+            }
+        }
+
+        // --- FULLSCREEN CONTROLS ---
+        document.getElementById("btn-fullscreen").addEventListener("click", () => {
+            const icon = document.getElementById("icon-fullscreen");
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+                icon.setAttribute("data-lucide", "minimize");
+            } else {
+                document.exitFullscreen();
+                icon.setAttribute("data-lucide", "maximize");
+            }
+            refreshIcons();
+        });
+
+        // --- INITIAL GAME START COUPLING ---
+        function initiateGameShift() {
+            AudioEngine.init();
+            gameState.score = 0;
+            gameState.streak = 0;
+            gameState.maxStreak = 0;
+            gameState.questionsAttempted = 0;
+            gameState.correctAnswersCount = 0;
+            gameState.timeLeft = 90;
+            
+            // Shuffle both databases at game start
+            shuffle(STAGE1_QUESTIONS);
+            shuffle(STAGE2_QUESTIONS);
+
+            gameState.stage = 1;
+            gameState.currentQIndex = 0;
+            gameState.screen = "stage_intro";
+            
+            updateScreenLayout();
+            
+            // Set up active run-time interval timer
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            gameState.timerInterval = setInterval(() => {
+                if (gameState.screen === "playing") {
+                    gameState.timeLeft--;
+                    document.getElementById("txt-timer").innerText = gameState.timeLeft + "s";
+                    const perc = (gameState.timeLeft / 90) * 100;
+                    const bar = document.getElementById("bar-timer");
+                    bar.style.width = `${perc}%`;
+                    
+                    if (gameState.timeLeft <= 15) {
+                        bar.className = "bg-gradient-to-r from-rose-500 to-red-600 h-full w-full transition-all duration-200 animate-pulse";
+                    } else {
+                        bar.className = "bg-gradient-to-r from-emerald-400 to-teal-500 h-full w-full transition-all duration-200";
+                    }
+
+                    if (gameState.timeLeft <= 0) {
+                        finishEntireShift();
+                    }
+                }
+            }, 1000);
+        }
+
+        // --- INTERACTIVE CRATE PHYSICS AND CONVEYOR INTERVALS ---
+        function startConveyorCrateAnimation() {
+            if (gameState.crateTimerInterval) clearInterval(gameState.crateTimerInterval);
+            
+            gameState.cratePos = 0;
+            gameState.crateTimeLeft = 15; // 15 seconds to answer each reaction
+            gameState.cratePaused = false;
+
+            const crateElement = document.getElementById("conveyor-crate");
+            const timerElement = document.getElementById("txt-crate-timer");
+            const svgCrate = document.getElementById("svg-crate");
+            const statusLabel = document.getElementById("lbl-belt-status");
+
+            crateElement.style.left = `0%`;
+            timerElement.innerText = `15s`;
+            svgCrate.setAttribute("class", "w-8 h-8 md:w-11 md:h-11 text-emerald-400 crate-glow");
+            statusLabel.innerText = "Status: Belt Moving - Active Shipment";
+            statusLabel.className = "text-emerald-400";
+
+            // Update physics/interval tick every 100ms
+            const intervalDuration = 100; // ms
+            const totalTicks = (15 * 1000) / intervalDuration;
+            let currentTick = 0;
+
+            gameState.crateTimerInterval = setInterval(() => {
+                if (gameState.screen !== "playing" || gameState.cratePaused) return;
+
+                currentTick++;
+                gameState.cratePos = (currentTick / totalTicks) * 100;
+                
+                // Keep visually confined inside machine boundaries of illustration
+                crateElement.style.left = `${gameState.cratePos}%`;
+
+                // Calculate countdown
+                const secondsElapsed = Math.floor((currentTick * intervalDuration) / 1000);
+                gameState.crateTimeLeft = Math.max(0, 15 - secondsElapsed);
+                timerElement.innerText = `${gameState.crateTimeLeft}s`;
+
+                // Warning feedback as box approaches the right side terminal
+                if (gameState.crateTimeLeft <= 5) {
+                    svgCrate.setAttribute("class", "w-8 h-8 md:w-11 md:h-11 text-rose-500 crate-glow-warning animate-pulse");
+                    statusLabel.innerText = "WARNING: Shipment nearing terminal exit!";
+                    statusLabel.className = "text-rose-500 font-extrabold animate-pulse";
+                }
+
+                // Timeout trigger sequence!
+                if (gameState.cratePos >= 100 || gameState.crateTimeLeft <= 0) {
+                    clearInterval(gameState.crateTimerInterval);
+                    processCrateTimeout();
+                }
+            }, intervalDuration);
+        }
+
+        function stopConveyorCrateAnimation() {
+            gameState.cratePaused = true;
+            if (gameState.crateTimerInterval) {
+                clearInterval(gameState.crateTimerInterval);
+            }
+        }
+
+        // TRIGGER ON CRATE TIMEOUT (WRONG ANSWER EVENT)
+        function processCrateTimeout() {
+            gameState.cratePaused = true;
+            const statusLabel = document.getElementById("lbl-belt-status");
+            statusLabel.innerText = "ERROR: Shipment Misaligned / Expired!";
+            statusLabel.className = "text-rose-600 font-black";
+
+            // Process a wrong answer feedback directly
+            triggerAnswerFeedback(false, () => {
+                gameState.streak = 0;
+                gameState.questionsAttempted++;
+                gameState.currentQIndex++;
+                
+                checkStageProgress();
+            });
+        }
+
+        function checkStageProgress() {
+            if (gameState.currentQIndex >= 5) {
+                if (gameState.stage === 1) {
+                    // Transition dynamically to Stage 2 intro screen
+                    gameState.stage = 2;
+                    gameState.currentQIndex = 0;
+                    gameState.screen = "stage_intro";
+                    updateScreenLayout();
+                } else {
+                    finishEntireShift();
+                }
+            } else {
+                loadCurrentQuestion();
+            }
+        }
+
+        // --- DYNAMIC RENDERING OF QUESTIONS ---
+        function loadCurrentQuestion() {
+            const progressTxt = document.getElementById("txt-progress");
+            const scoreTxt = document.getElementById("txt-score");
+            const comboTag = document.getElementById("txt-multiplier");
+
+            progressTxt.innerText = `${gameState.currentQIndex + 1} / 5`;
+            scoreTxt.innerText = gameState.score;
+
+            if (gameState.streak >= 2) {
+                comboTag.innerText = `${gameState.streak}x Combo`;
+                comboTag.classList.remove("hidden");
+            } else {
+                comboTag.classList.add("hidden");
+            }
+
+            if (gameState.stage === 1) {
+                renderStage1Layout();
+            } else {
+                renderStage2Layout();
+            }
+
+            // Fire up moving crate physics package!
+            startConveyorCrateAnimation();
+        }
+
+        // --- STAGE 1: KEYBOARD & FORMULA LAYOUTS ---
+        function renderStage1Layout() {
+            const q = STAGE1_QUESTIONS[gameState.currentQIndex % STAGE1_QUESTIONS.length];
+            document.getElementById("txt-equation-prompt-header").innerText = "Syllabus Salt Equation Typing Shift";
+            
+            // Clear buffer typing state
+            gameState.stage1TypedAnswer = "";
+            document.getElementById("txt-input-display").innerText = "Type salt name below...";
+            document.getElementById("txt-input-display").className = "text-sm md:text-base italic text-slate-500 tracking-wide select-text";
+
+            const eqBox = document.getElementById("equation-box");
+            eqBox.innerHTML = `
+                <span class="bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-200">${q.acid}</span>
+                <span class="text-emerald-400 font-black">+</span>
+                <span class="bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-200">${q.reactant}</span>
+                <span class="text-emerald-400 font-black">&rarr;</span>
+                <span class="bg-emerald-500/20 border-2 border-dashed border-emerald-500/50 px-3 py-1 rounded-lg text-emerald-300 font-extrabold min-w-[100px] text-center inline-block">?</span>
+                <span class="text-slate-500 font-bold">+</span>
+                <span class="text-slate-400 text-xs font-semibold">Other Product(s)</span>
+            `;
+
+            renderVirtualKeyboard();
+        }
+
+        // CUSTOM VIRTUAL KEYBOARD LAYOUT DESIGN
+        function renderVirtualKeyboard() {
+            const kbContainer = document.getElementById("virtual-keyboard");
+            kbContainer.innerHTML = "";
+
+            const row1 = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"];
+            const row2 = ["A", "S", "D", "F", "G", "H", "J", "K", "L", "(", ")"];
+            const row3 = ["Z", "X", "C", "V", "B", "N", "M", "I", "V", "X"]; // Roman numerals
+            const row4 = ["Space", "Backspace", "Submit"];
+
+            const renderRow = (keys, isSpecialRow = false) => {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = `flex justify-center gap-1 w-full ${isSpecialRow ? 'mt-1.5' : ''}`;
+                
+                keys.forEach(key => {
+                    const btn = document.createElement("button");
+                    
+                    // Style determination
+                    if (key === "Submit") {
+                        btn.className = "flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-xs rounded-lg shadow cursor-pointer transition-all interactive-scale";
+                    } else if (key === "Backspace" || key === "Space") {
+                        btn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg shadow cursor-pointer transition-all flex-1 interactive-scale";
+                    } else {
+                        btn.className = "w-7 h-10 md:w-9 md:h-11 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 font-bold rounded-lg shadow text-center flex items-center justify-center text-xs cursor-pointer transition-all interactive-scale";
+                    }
+                    
+                    btn.innerText = key;
+                    
+                    // Unified Touch Trigger
+                    const triggerKeyAction = (e) => {
+                        e.preventDefault();
+                        handleKeyboardInput(key);
+                    };
+                    btn.addEventListener("click", triggerKeyAction);
+                    
+                    rowDiv.appendChild(btn);
+                });
+                kbContainer.appendChild(rowDiv);
+            };
+
+            renderRow(row1);
+            renderRow(row2);
+            renderRow(row3);
+            renderRow(row4, true);
+        }
+
+        // KEYBOARD EVENT EVALUATOR
+        function handleKeyboardInput(key) {
+            const display = document.getElementById("txt-input-display");
+            
+            if (key === "Backspace") {
+                gameState.stage1TypedAnswer = gameState.stage1TypedAnswer.slice(0, -1);
+            } else if (key === "Space") {
+                gameState.stage1TypedAnswer += " ";
+            } else if (key === "Submit") {
+                evaluateStage1Answer();
+                return;
+            } else {
+                gameState.stage1TypedAnswer += key;
+            }
+
+            if (gameState.stage1TypedAnswer.length > 0) {
+                display.innerText = gameState.stage1TypedAnswer;
+                display.className = "text-sm md:text-base font-bold text-slate-100 tracking-wide select-text";
+            } else {
+                display.innerText = "Type salt name below...";
+                display.className = "text-sm md:text-base italic text-slate-500 tracking-wide select-text";
+            }
+        }
+
+        // STAGE 1 VERIFICATION ROUTINE
+        function evaluateStage1Answer() {
+            // Stop ongoing conveyor clock
+            stopConveyorCrateAnimation();
+
+            const q = STAGE1_QUESTIONS[gameState.currentQIndex % STAGE1_QUESTIONS.length];
+            const cleanInput = gameState.stage1TypedAnswer.trim().toLowerCase().replace(/\s+/g, ' ');
+            
+            const isCorrect = q.accepted.includes(cleanInput);
+            triggerAnswerFeedback(isCorrect, () => {
+                if (isCorrect) {
+                    gameState.correctAnswersCount++;
+                    gameState.streak++;
+                    if (gameState.streak > gameState.maxStreak) gameState.maxStreak = gameState.streak;
+                    
+                    const calculatedPoints = 120 * (gameState.streak >= 2 ? gameState.streak : 1);
+                    gameState.score += calculatedPoints;
+                } else {
+                    gameState.streak = 0;
+                }
+                
+                gameState.questionsAttempted++;
+                gameState.currentQIndex++;
+                
+                checkStageProgress();
+            });
+        }
+
+        // --- STAGE 2: FORMULA INTERFACE (MULTI-SELECT) ---
+        function renderStage2Layout() {
+            const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
+            document.getElementById("txt-equation-prompt-header").innerText = "Syllabus Multiple Product Dispatch Shift";
+            
+            gameState.stage2Selections = []; // reset active array
+
+            const eqBox = document.getElementById("equation-box");
+            eqBox.innerHTML = `
+                <span class="bg-slate-900/90 border border-slate-700 px-2 py-1 rounded-lg text-slate-200 font-mono text-xs">${parseFormulaMarkup(q.reactantA)}</span>
+                <span class="text-cyan-400 font-black">+</span>
+                <span class="bg-slate-900/90 border border-slate-700 px-2 py-1 rounded-lg text-slate-200 font-mono text-xs">${parseFormulaMarkup(q.reactantB)}</span>
+                <span class="text-cyan-400 font-black">&rarr;</span>
+                <span class="bg-cyan-500/20 border-2 border-dashed border-cyan-500/50 px-3 py-1 rounded-lg text-cyan-300 font-extrabold min-w-[120px] text-center text-xs">Select Products</span>
+            `;
+
+            renderConveyorBeltOptions();
+        }
+
+        function renderConveyorBeltOptions() {
+            const belt = document.getElementById("conveyor-belt");
+            belt.innerHTML = "";
+            
+            const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
+            
+            q.allOptions.forEach(formula => {
+                const button = document.createElement("button");
+                button.className = "conveyor-item w-full py-3 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl font-bold font-mono text-center text-slate-300 flex flex-col items-center justify-center gap-1 shadow-md cursor-pointer transition-all interactive-scale text-xs";
+                
+                button.innerHTML = `
+                    <span class="text-xs md:text-sm font-black tracking-wide">${parseFormulaMarkup(formula)}</span>
+                    <span class="selection-indicator text-[8px] uppercase font-bold text-slate-500 tracking-wider">Tap to load</span>
+                `;
+                
+                const toggleSelection = (e) => {
+                    e.preventDefault();
+                    const index = gameState.stage2Selections.indexOf(formula);
+                    if (index > -1) {
+                        gameState.stage2Selections.splice(index, 1);
+                        button.className = "conveyor-item w-full py-3 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl font-bold font-mono text-center text-slate-300 flex flex-col items-center justify-center gap-1 shadow-md cursor-pointer transition-all interactive-scale text-xs";
+                        button.querySelector(".selection-indicator").innerText = "Tap to load";
+                        button.querySelector(".selection-indicator").className = "selection-indicator text-[8px] uppercase font-bold text-slate-500 tracking-wider";
+                    } else {
+                        gameState.stage2Selections.push(formula);
+                        button.className = "conveyor-item w-full py-3 px-2 bg-cyan-950/80 hover:bg-cyan-900/80 border-2 border-cyan-500 rounded-xl font-bold font-mono text-center text-cyan-300 flex flex-col items-center justify-center gap-1 shadow-md cursor-pointer transition-all scale-[1.02] relative text-xs";
+                        button.querySelector(".selection-indicator").innerText = "Loaded on belt";
+                        button.querySelector(".selection-indicator").className = "selection-indicator text-[8px] uppercase font-extrabold text-cyan-400 tracking-wider";
+                    }
+                };
+
+                button.addEventListener("click", toggleSelection);
+                belt.appendChild(button);
+            });
+        }
+
+        // EVALUATE MULTISELECT ANSWERS
+        function evaluateStage2Answer() {
+            // Stop ongoing conveyor clock
+            stopConveyorCrateAnimation();
+
+            const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
+            
+            const sortedSelections = [...gameState.stage2Selections].sort();
+            const sortedCorrect = [...q.correctProducts].sort();
+
+            const isCorrect = (sortedSelections.length === sortedCorrect.length) && 
+                              sortedSelections.every((val, index) => val === sortedCorrect[index]);
+
+            triggerAnswerFeedback(isCorrect, () => {
+                if (isCorrect) {
+                    gameState.correctAnswersCount++;
+                    gameState.streak++;
+                    if (gameState.streak > gameState.maxStreak) gameState.maxStreak = gameState.streak;
+                    
+                    const calculatedPoints = 150 * (gameState.streak >= 2 ? gameState.streak : 1);
+                    gameState.score += calculatedPoints;
+                } else {
+                    gameState.streak = 0;
+                }
+
+                gameState.questionsAttempted++;
+                gameState.currentQIndex++;
+
+                checkStageProgress();
+            });
+        }
+
+        // --- GENERAL TRANSITIONAL VISUAL & AUDIO FEEDBACK LAYOVER ---
+        function triggerAnswerFeedback(isCorrect, callback) {
+            const overlay = document.getElementById("feedback-overlay");
+            const card = document.getElementById("feedback-card");
+            const icon = document.getElementById("feedback-icon");
+            const text = document.getElementById("feedback-text");
+            const targetContainer = document.getElementById("target-equation-container");
+
+            if (isCorrect) {
+                AudioEngine.correct();
+                card.className = "px-6 py-3.5 rounded-2xl shadow-2xl text-xl font-extrabold border bg-emerald-950/95 border-emerald-500 text-emerald-400 flex items-center gap-2 animate-bounce";
+                icon.innerHTML = `<i data-lucide="check" class="w-6 h-6 text-emerald-400"></i>`;
+                text.innerText = "PRODUCT VERIFIED";
+            } else {
+                AudioEngine.wrong();
+                card.className = "px-6 py-3.5 rounded-2xl shadow-2xl text-xl font-extrabold border bg-rose-950/95 border-rose-500 text-rose-400 flex items-center gap-2 animate-shake";
+                icon.innerHTML = `<i data-lucide="alert-circle" class="w-6 h-6 text-rose-400"></i>`;
+                text.innerText = "REACTION MISMATCH";
+                
+                targetContainer.classList.add("animate-shake");
+                setTimeout(() => {
+                    targetContainer.classList.remove("animate-shake");
+                }, 400);
+            }
+            refreshIcons();
+
+            overlay.classList.remove("opacity-0", "scale-75");
+            overlay.classList.add("opacity-100", "scale-100");
+
+            setTimeout(() => {
+                overlay.classList.remove("opacity-100", "scale-100");
+                overlay.classList.add("opacity-0", "scale-75");
+                callback();
+            }, 1000);
+        }
+
+        // --- CONFETTI LAUNCH CONTROLLER ---
+        const ConfettiEngine = {
+            canvas: null,
+            ctx: null,
+            particles: [],
+            active: false,
+            init() {
+                this.canvas = document.getElementById("canvas-confetti");
+                this.ctx = this.canvas.getContext("2d");
+            },
+            resize() {
+                if (this.canvas) {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                }
+            },
+            start() {
+                this.init();
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.canvas.classList.remove("hidden");
+                this.active = true;
+                this.particles = [];
+                for (let i = 0; i < 80; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height - this.canvas.height,
+                        r: Math.random() * 5 + 3,
+                        d: Math.random() * this.canvas.height,
+                        color: `hsl(${Math.random() * 360}, 85%, 60%)`,
+                        tilt: Math.random() * 10 - 5,
+                        tiltAngleIncremental: Math.random() * 0.08 + 0.02,
+                        tiltAngle: 0
+                    });
+                }
+                this.animate();
+            },
+            stop() {
+                this.active = false;
+                if (this.canvas) this.canvas.classList.add("hidden");
+            },
+            animate() {
+                if (!this.active) return;
+                requestAnimationFrame(() => this.animate());
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - idx / 3) * 12;
+
+                    this.ctx.beginPath();
+                    this.ctx.lineWidth = p.r;
+                    this.ctx.strokeStyle = p.color;
+                    this.ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                    this.ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                    this.ctx.stroke();
+                });
+
+                if (this.particles.every(p => p.y > this.canvas.height)) {
+                    this.stop();
+                }
+            }
+        };
+
+        // --- CONCLUDING GAME EVALUATOR ---
+        function finishEntireShift() {
+            stopConveyorCrateAnimation();
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            gameState.screen = "result";
+            AudioEngine.gameOver();
+
+            // High score saving routines
+            try {
+                const currentHigh = parseInt(localStorage.getItem("chem_high_score") || "0", 10);
+                if (gameState.score > currentHigh) {
+                    localStorage.setItem("chem_high_score", gameState.score);
+                }
+            } catch(e) {}
+
+            const evaluationText = document.getElementById("txt-result-evaluation");
+            const iconContainer = document.getElementById("result-icon-container");
+
+            document.getElementById("txt-final-score").innerText = gameState.score;
+            document.getElementById("txt-final-accuracy").innerText = `${gameState.correctAnswersCount} / ${gameState.questionsAttempted}`;
+            document.getElementById("txt-final-streak").innerText = gameState.maxStreak;
+
+            const accuracyPercentage = gameState.questionsAttempted > 0 ? Math.round((gameState.correctAnswersCount / gameState.questionsAttempted) * 100) : 0;
+
+            if (accuracyPercentage >= 80) {
+                evaluationText.innerHTML = "Superb! Master level chemical alignment verified. You completely understand both naming rules and chemical formula products.";
+                iconContainer.className = "w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20 text-emerald-400";
+                iconContainer.innerHTML = `<i data-lucide="award" class="w-10 h-10"></i>`;
+                AudioEngine.fanfare();
+                ConfettiEngine.start();
+            } else if (accuracyPercentage >= 50) {
+                evaluationText.innerHTML = "Good shift complete. You have a stable grasp of products, but check your typing spelling and multi-product formulas.";
+                iconContainer.className = "w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-cyan-400";
+                iconContainer.innerHTML = `<i data-lucide="thumbs-up" class="w-10 h-10"></i>`;
+            } else {
+                evaluationText.innerHTML = "Shift completed with warnings. Remember standard patterns: Metal generates Hydrogen, Carbonate produces Carbon Dioxide, Bases produce Water.";
+                iconContainer.className = "w-20 h-20 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-amber-400";
+                iconContainer.innerHTML = `<i data-lucide="alert-triangle" class="w-10 h-10"></i>`;
+            }
+
+            updateScreenLayout();
+        }
+
+        // --- BUTTON LISTENER ASSIGNMENTS ---
+        document.getElementById("btn-start").addEventListener("click", initiateGameShift);
+        
+        document.getElementById("btn-proceed-stage").addEventListener("click", () => {
+            gameState.screen = "playing";
+            updateScreenLayout();
+            loadCurrentQuestion();
+        });
+
+        document.getElementById("btn-input-clear").addEventListener("click", () => {
+            gameState.stage1TypedAnswer = "";
+            const display = document.getElementById("txt-input-display");
+            display.innerText = "Type salt name below...";
+            display.className = "text-sm md:text-base italic text-slate-500 tracking-wide select-text";
+        });
+
+        document.getElementById("btn-submit-multiselect").addEventListener("click", evaluateStage2Answer);
+        
+        document.getElementById("btn-restart").addEventListener("click", () => {
+            ConfettiEngine.stop();
+            initiateGameShift();
+        });
+
+        // --- LAPTOP / PHYSICAL KEYBOARD INTEGRATION ---
+        window.addEventListener("keydown", (e) => {
+            // Only capture typing when actively playing Stage 1
+            if (gameState.screen !== "playing" || gameState.stage !== 1) return;
+
+            const key = e.key;
+
+            if (key === "Backspace") {
+                e.preventDefault();
+                handleKeyboardInput("Backspace");
+            } else if (key === "Enter") {
+                e.preventDefault();
+                handleKeyboardInput("Submit");
+            } else if (key === " ") {
+                e.preventDefault();
+                handleKeyboardInput("Space");
+            } else {
+                const upperKey = key.toUpperCase();
+                const allowedPattern = /^[A-Z0-9\(\)]$/;
+                if (allowedPattern.test(upperKey)) {
+                    e.preventDefault();
+                    handleKeyboardInput(upperKey);
+                }
+            }
+        });
+
+        window.addEventListener("load", () => {
+            autoScanDatabases();
+            updateScreenLayout();
+        });
+    </script>
+</body>
+</html>
