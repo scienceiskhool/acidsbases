@@ -226,21 +226,19 @@
                         <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
                             <i data-lucide="keyboard" class="w-4 h-4 text-emerald-400"></i> Type Salt Name
                         </span>
-                        <span class="text-[10px] text-slate-500 italic">Name salt formed from acid and reactant</span>
+                        <span class="text-[10px] text-slate-500 italic">Select text box to open keyboard</span>
                     </div>
 
-                    <div class="bg-slate-950 border-2 border-slate-800 rounded-xl p-3 flex items-center justify-between min-h-[50px] shadow-inner">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
-                            <span id="txt-input-display" class="text-sm md:text-base font-bold text-slate-100 tracking-wide select-text"></span>
-                        </div>
-                        <button id="btn-input-clear" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-slate-200 transition-colors">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <div class="relative flex items-center">
+                        <input id="input-salt-name" type="text" placeholder="Type salt name (e.g. Sodium chloride)..." autocomplete="off" spellcheck="false" class="w-full bg-slate-950 border-2 border-slate-800 focus:border-emerald-500 focus:outline-none rounded-xl py-3.5 px-4 text-sm md:text-base font-bold text-slate-100 placeholder-slate-600 transition-all shadow-inner pr-10">
+                        <button id="btn-input-clear" class="absolute right-3 text-slate-500 hover:text-slate-300 transition-colors p-1" title="Clear text">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
                         </button>
                     </div>
 
-                    <!-- Virtual Keyboard -->
-                    <div id="virtual-keyboard" class="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-lg grid grid-cols-1 gap-1.5"></div>
+                    <button id="btn-submit-stage1" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                        Submit Salt Name <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
                 </div>
 
                 <!-- STAGE 2 AREA: Chemical Formulas (Multi-select conveyor) -->
@@ -379,7 +377,6 @@
             timerInterval: null,
             
             // Sub stage states
-            stage1TypedAnswer: "",
             stage2Selections: [], // selected formula strings
 
             // Conveyor crate movement states
@@ -714,9 +711,10 @@
             const q = STAGE1_QUESTIONS[gameState.currentQIndex % STAGE1_QUESTIONS.length];
             document.getElementById("txt-equation-prompt-header").innerText = "Syllabus Salt Equation Typing Shift";
             
-            gameState.stage1TypedAnswer = "";
-            document.getElementById("txt-input-display").innerText = "Type salt name below...";
-            document.getElementById("txt-input-display").className = "text-sm md:text-base italic text-slate-500 tracking-wide select-text";
+            const saltInput = document.getElementById("input-salt-name");
+            saltInput.value = "";
+            saltInput.disabled = false;
+            setTimeout(() => saltInput.focus(), 100);
 
             const eqBox = document.getElementById("equation-box");
             eqBox.innerHTML = `
@@ -728,81 +726,17 @@
                 <span class="text-slate-500 font-bold">+</span>
                 <span class="text-slate-400 text-xs font-semibold">Other Product(s)</span>
             `;
-
-            renderVirtualKeyboard();
-        }
-
-        // --- STREAMING_CHUNK: Setup Keyboard Mapping and Virtual Panels ---
-        // VIRTUAL KEYBOARD LAYOUT
-        function renderVirtualKeyboard() {
-            const kbContainer = document.getElementById("virtual-keyboard");
-            kbContainer.innerHTML = "";
-
-            const row1 = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"];
-            const row2 = ["A", "S", "D", "F", "G", "H", "J", "K", "L", "(", ")"];
-            const row3 = ["Z", "X", "C", "V", "B", "N", "M"]; 
-            const row4 = ["Space", "Backspace", "Submit"];
-
-            const renderRow = (keys, isSpecialRow = false) => {
-                const rowDiv = document.createElement("div");
-                rowDiv.className = `flex justify-center gap-1 w-full ${isSpecialRow ? 'mt-1.5' : ''}`;
-                
-                keys.forEach(key => {
-                    const btn = document.createElement("button");
-                    
-                    if (key === "Submit") {
-                        btn.className = "flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-xs rounded-lg shadow cursor-pointer transition-all interactive-scale";
-                    } else if (key === "Backspace" || key === "Space") {
-                        btn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg shadow cursor-pointer transition-all flex-1 interactive-scale";
-                    } else {
-                        btn.className = "w-7 h-10 md:w-9 md:h-11 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 font-bold rounded-lg shadow text-center flex items-center justify-center text-xs cursor-pointer transition-all interactive-scale";
-                    }
-                    
-                    btn.innerText = key;
-                    btn.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        handleKeyboardInput(key);
-                    });
-                    
-                    rowDiv.appendChild(btn);
-                });
-                kbContainer.appendChild(rowDiv);
-            };
-
-            renderRow(row1);
-            renderRow(row2);
-            renderRow(row3);
-            renderRow(row4, true);
-        }
-
-        function handleKeyboardInput(key) {
-            const display = document.getElementById("txt-input-display");
-            
-            if (key === "Backspace") {
-                gameState.stage1TypedAnswer = gameState.stage1TypedAnswer.slice(0, -1);
-            } else if (key === "Space") {
-                gameState.stage1TypedAnswer += " ";
-            } else if (key === "Submit") {
-                evaluateStage1Answer();
-                return;
-            } else {
-                gameState.stage1TypedAnswer += key;
-            }
-
-            if (gameState.stage1TypedAnswer.length > 0) {
-                display.innerText = gameState.stage1TypedAnswer;
-                display.className = "text-sm md:text-base font-bold text-slate-100 tracking-wide select-text";
-            } else {
-                display.innerText = "Type salt name below...";
-                display.className = "text-sm md:text-base italic text-slate-500 tracking-wide select-text";
-            }
         }
 
         function evaluateStage1Answer() {
             stopConveyorCrateAnimation();
 
+            const saltInput = document.getElementById("input-salt-name");
+            saltInput.disabled = true;
+            const typedAnswer = saltInput.value;
+
             const q = STAGE1_QUESTIONS[gameState.currentQIndex % STAGE1_QUESTIONS.length];
-            const cleanInput = gameState.stage1TypedAnswer.trim().toLowerCase().replace(/\s+/g, ' ');
+            const cleanInput = typedAnswer.trim().toLowerCase().replace(/\s+/g, ' ');
             
             const isCorrect = q.accepted.includes(cleanInput);
             triggerAnswerFeedback(isCorrect, () => {
@@ -824,7 +758,6 @@
             });
         }
 
-        // --- STREAMING_CHUNK: Setup Stage 2 Formula layouts and Conveyors ---
         // --- STAGE 2 FORMULA LAYOUTS (MULTI-SELECT) ---
         function renderStage2Layout() {
             const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
@@ -1070,10 +1003,18 @@
         });
 
         document.getElementById("btn-input-clear").addEventListener("click", () => {
-            gameState.stage1TypedAnswer = "";
-            const display = document.getElementById("txt-input-display");
-            display.innerText = "Type salt name below...";
-            display.className = "text-sm md:text-base italic text-slate-500 tracking-wide select-text";
+            const saltInput = document.getElementById("input-salt-name");
+            saltInput.value = "";
+            saltInput.focus();
+        });
+
+        document.getElementById("btn-submit-stage1").addEventListener("click", evaluateStage1Answer);
+
+        document.getElementById("input-salt-name").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                evaluateStage1Answer();
+            }
         });
 
         document.getElementById("btn-submit-multiselect").addEventListener("click", evaluateStage2Answer);
@@ -1081,31 +1022,6 @@
         document.getElementById("btn-restart").addEventListener("click", () => {
             ConfettiEngine.stop();
             initiateGameShift();
-        });
-
-        // --- LAPTOP / PHYSICAL KEYBOARD INTEGRATION ---
-        window.addEventListener("keydown", (e) => {
-            if (gameState.screen !== "playing" || gameState.stage !== 1) return;
-
-            const key = e.key;
-
-            if (key === "Backspace") {
-                e.preventDefault();
-                handleKeyboardInput("Backspace");
-            } else if (key === "Enter") {
-                e.preventDefault();
-                handleKeyboardInput("Submit");
-            } else if (key === " ") {
-                e.preventDefault();
-                handleKeyboardInput("Space");
-            } else {
-                const upperKey = key.toUpperCase();
-                const allowedPattern = /^[A-Z0-9\(\)]$/;
-                if (allowedPattern.test(upperKey)) {
-                    e.preventDefault();
-                    handleKeyboardInput(upperKey);
-                }
-            }
         });
 
         // --- SAFE ICON REFRESH HELPER ---
