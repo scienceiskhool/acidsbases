@@ -1,1047 +1,896 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Acid Reaction Assembly Line</title>
-    <!-- Tailwind CSS for modern layout styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;950&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-        /* Touch interactive scaling */
-        .interactive-scale {
-            transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
-        }
-        .interactive-scale:active {
-            transform: scale(0.95);
-        }
-        sub {
-            font-size: 0.65em;
-            bottom: -0.15em;
-            margin-left: 0.05em;
-            margin-right: 0.05em;
-        }
-        /* Shake animation for incorrect answer feedback */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            75% { transform: translateX(6px); }
-        }
-        .animate-shake {
-            animation: shake 0.3s ease-in-out;
-        }
-        /* Conveyor crate glow animations */
-        .crate-glow {
-            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.8));
-        }
-        .crate-glow-warning {
-            filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.9));
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#069494">
+<title>Acid Factory · Science is Khool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Science is Khool · Tropical Punch — "Arcade Punch" game skin */
+:root {
+  --orange: #FF8243; --pink: #FFC0CB; --yellow: #FCE883; --teal: #069494; --teal-ink: #057A7A;
+  --orange-tint: #FFE6DA; --pink-tint: #FFEEF1; --yellow-tint: #FEF8D9; --teal-tint: #DDF2F2;
+  --ink: #1F2A2E; --muted: #56656A; --line: #E4E8E9; --bg: #FFFFFF;
+  --good: #1E9E62; --bad: #E2463A;
+  --b: 3px solid var(--ink);
+  --font: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body {
+  font: 16px/1.5 var(--font); min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+.sub { font-size: .68em; position: relative; bottom: -.25em; line-height: 0; }
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+/* ---------- shared pieces ---------- */
+.wrap { width: 100%; max-width: 1040px; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; }
+.card { background: #fff; border: var(--b); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: var(--b); border-radius: 16px; padding: 14px 18px; font-weight: 800; font-size: 1.1rem;
+  background: var(--orange); color: var(--ink); box-shadow: 0 5px 0 var(--ink);
+  transition: transform .08s, box-shadow .08s; user-select: none; -webkit-user-select: none;
+}
+.btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn.big { width: 100%; font-size: 1.2rem; text-transform: uppercase; letter-spacing: .03em; padding: 16px; }
+.btn.alt { background: #fff; }
+.btn.teal { background: var(--teal); color: #fff; }
+.pill { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border: 2px solid var(--ink); border-radius: 99px; padding: 2px 10px; background: #fff; }
+.icon-btn { width: 42px; height: 42px; border-radius: 12px; border: var(--b); background: #fff; display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); padding: 0; flex: none; }
+.icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 2px solid var(--line); background: #fff; }
+.topbar .brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; text-decoration: none; color: var(--ink); }
+.topbar .brand img { width: 38px; height: 38px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--yellow); object-fit: cover; flex: none; }
+.topbar .brand b { font-weight: 800; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar .brand small { display: block; font-size: .72rem; color: var(--muted); font-weight: 600; line-height: 1.2; }
+
+/* ---------- start screen ---------- */
+.start { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; margin: auto 0; padding-block: 8px 20px; }
+.hero { background: var(--teal); color: #fff; padding: 22px 22px 0; position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.hero h1 { margin: 6px 0 6px; font-size: clamp(2rem, 7vw, 3rem); line-height: 1.05; font-weight: 800; letter-spacing: -.01em; }
+.hero h1 em { font-style: normal; background: var(--yellow); color: var(--ink); border: var(--b); border-radius: 14px; padding: 0 10px; display: inline-block; transform: rotate(-2deg); }
+.hero p { margin: 0 0 20px; max-width: 34ch; font-weight: 600; }
+.hero .pill { color: var(--ink); }
+.hero img.mascot { width: 92px; align-self: end; display: block; }
+.stages { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stage-card { padding: 14px; border: var(--b); border-radius: 16px; background: var(--yellow-tint); }
+.stage-card.s2 { background: var(--pink-tint); }
+.stage-card b { display: block; font-weight: 800; }
+.stage-card span { font-size: .88rem; color: var(--muted); display: block; line-height: 1.4; margin-top: 2px; }
+.form { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.form h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fields .full { grid-column: 1 / -1; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: .9rem; }
+label.f input, label.f select { font-size: 16px; padding: 12px 12px; border: 2.5px solid var(--ink); border-radius: 12px; background: #fff; width: 100%; min-width: 0; }
+label.f input:focus, label.f select:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
+.form-err { color: var(--bad); font-weight: 700; font-size: .9rem; min-height: 1.2em; margin: -4px 0 0; }
+.best { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); font-weight: 700; }
+.best b { color: var(--ink); }
+@media (min-width: 760px) {
+  .start { grid-template-columns: 1.1fr 1fr; gap: 28px; }
+  .hero img.mascot { width: 120px; }
+}
+
+/* ---------- stage intro ---------- */
+.intro { max-width: 520px; width: 100%; margin: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; text-align: center; }
+.intro h2 { margin: 0; font-size: 1.7rem; font-weight: 800; line-height: 1.15; }
+.intro p { margin: 0; color: var(--muted); }
+.rules { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.rule { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 2.5px solid var(--ink); border-radius: 14px; background: var(--yellow-tint); font-weight: 700; }
+.rule:nth-child(2) { background: var(--pink-tint); }
+.rule:nth-child(3) { background: var(--teal-tint); }
+.rule i { font-style: normal; font-weight: 800; color: var(--teal-ink); }
+
+/* ---------- play screen ---------- */
+.play { display: grid; grid-template-columns: 1fr; border: var(--b); border-radius: 22px; overflow: hidden; box-shadow: 6px 6px 0 var(--ink); background: #fff; margin-block: 4px 16px; }
+.hud { background: var(--teal); color: #fff; padding: 14px; display: flex; flex-direction: column; gap: 10px; border-bottom: var(--b); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.score { font-size: 2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.score small { display: block; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; opacity: .9; margin-bottom: 2px; }
+.combo { background: var(--yellow); color: var(--ink); font-weight: 800; border: var(--b); border-radius: 10px; padding: 2px 10px; transform: rotate(-4deg); box-shadow: 2px 2px 0 var(--ink); white-space: nowrap; }
+.combo.pop { animation: pop .35s ease-out; }
+@keyframes pop { 0% { transform: rotate(-4deg) scale(.6); } 70% { transform: rotate(-4deg) scale(1.15); } 100% { transform: rotate(-4deg) scale(1); } }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 24px; height: 9px; border-radius: 99px; background: rgba(255,255,255,.35); }
+.dots i.now { background: #fff; }
+.dots i.ok { background: var(--yellow); }
+.dots i.no { background: var(--orange); }
+.stage-tag { font-weight: 800; font-size: .8rem; letter-spacing: .08em; }
+.eq { background: #fff; color: var(--ink); border: var(--b); border-radius: 14px; padding: 10px 12px; text-align: center; font-weight: 800; font-size: 1.15rem; line-height: 1.35; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; }
+.eq .q { display: inline-block; min-width: 2.2em; border: 2.5px dashed var(--ink); border-radius: 10px; padding: 0 8px; background: var(--yellow-tint); }
+.eq .op { color: var(--teal-ink); }
+.eq-hint { font-size: .78rem; font-weight: 700; opacity: .9; text-align: center; margin-top: -4px; }
+
+.belt { position: relative; height: 92px; background: var(--yellow-tint); border-bottom: var(--b); overflow: hidden; }
+.track { position: absolute; left: 0; right: 0; bottom: 12px; height: 22px; border-block: var(--b); background: repeating-linear-gradient(115deg, var(--ink) 0 6px, var(--orange) 6px 20px); background-size: 200% 100%; animation: belt 1s linear infinite; }
+.belt.stopped .track { animation-play-state: paused; }
+@keyframes belt { from { background-position: 0 0; } to { background-position: -21.4px 0; } }
+.crate { position: absolute; bottom: 34px; left: 0; width: 54px; height: 44px; margin-left: 6px; background: var(--pink); border: var(--b); border-radius: 8px; display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; will-change: transform; }
+.crate::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; border-top: 2.5px solid var(--ink); }
+.crate.warn { background: var(--orange); }
+.crate.ok { background: var(--yellow); }
+.crate.no { background: #fff; }
+.ring { position: absolute; right: 12px; top: 10px; width: 44px; height: 44px; border-radius: 50%; border: var(--b); display: grid; place-items: center; background: conic-gradient(var(--orange) 0 100%, #fff 0); }
+.ring span { width: 30px; height: 30px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-weight: 800; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.ring.warn span { color: var(--bad); }
+
+.controls { padding: 14px; display: flex; flex-direction: column; gap: 12px; position: relative; }
+.ctl-label { font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.type-row { display: flex; gap: 8px; }
+.type-row input { flex: 1; min-width: 0; font-size: 18px; font-weight: 700; padding: 14px; border: var(--b); border-radius: 16px; background: #fff; }
+.type-row input:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
+.type-help { font-size: .82rem; color: var(--muted); margin-top: -4px; }
+.opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.opt { font-weight: 800; font-size: 1.2rem; padding: 14px 4px; border: var(--b); border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--ink); transition: transform .08s, box-shadow .08s, background .1s; user-select: none; -webkit-user-select: none; }
+.opt[aria-pressed="true"] { background: var(--yellow); transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.opt.right { background: #D8F3E4; }
+.opt.wrong { background: var(--orange-tint); text-decoration: line-through; }
+.opt.missed { outline: 3px dashed var(--good); outline-offset: -7px; }
+
+.feedback { border: var(--b); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.feedback.ok { background: #D8F3E4; }
+.feedback.no { background: var(--orange-tint); }
+.feedback h3 { margin: 0; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.feedback p { margin: 0; font-weight: 600; }
+.feedback .ans { font-weight: 800; font-size: 1.1rem; }
+.feedback .tip { font-size: .9rem; color: var(--ink); background: rgba(255,255,255,.7); border-radius: 10px; padding: 6px 10px; }
+
+@media (min-width: 760px) {
+  .play { grid-template-columns: 1.15fr 1fr; grid-template-rows: auto 1fr; grid-template-areas: "hud ctl" "belt ctl"; }
+  .hud { grid-area: hud; }
+  .belt { grid-area: belt; height: auto; min-height: 150px; border-bottom: 0; }
+  .controls { grid-area: ctl; border-left: var(--b); padding: 18px; justify-content: center; }
+  .eq { font-size: 1.35rem; padding: 14px; }
+  .opts { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+  .belt { min-height: 90px; }
+  .hud { gap: 6px; padding: 10px 14px; }
+  .score { font-size: 1.5rem; }
+}
+/* phone with keyboard open: shrink the belt so the answer box stays visible */
+@media (max-width: 759px) { body.typing .belt { height: 62px; } body.typing .crate { bottom: 22px; transform-origin: bottom; } body.typing .ring { top: 4px; width: 38px; height: 38px; } body.typing .track { bottom: 4px; } }
+
+/* ---------- results ---------- */
+.results { display: grid; gap: 18px; grid-template-columns: 1fr; padding-block: 8px 20px; }
+.res-hero { background: var(--teal); color: #fff; padding: 22px; display: flex; gap: 18px; align-items: center; }
+.big-ring { --p: 0; width: 120px; height: 120px; flex: none; border-radius: 50%; border: var(--b); background: conic-gradient(var(--yellow) calc(var(--p) * 1%), #fff 0); display: grid; place-items: center; }
+.big-ring span { width: 88px; height: 88px; border-radius: 50%; background: #fff; color: var(--ink); border: var(--b); display: grid; place-items: center; font-weight: 800; font-size: 1.7rem; }
+.res-hero h2 { margin: 0 0 4px; font-size: 1.6rem; line-height: 1.15; font-weight: 800; }
+.res-hero p { margin: 0; font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stat { border: var(--b); border-radius: 14px; padding: 8px 10px; background: #fff; box-shadow: 0 4px 0 var(--ink); }
+.stat span { display: block; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stat b { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat:nth-child(1) { background: var(--yellow-tint); } .stat:nth-child(2) { background: var(--pink-tint); } .stat:nth-child(3) { background: var(--teal-tint); } .stat:nth-child(4) { background: var(--orange-tint); }
+.panel { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.panel h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: 10.5em 1fr 3.2em; gap: 10px; align-items: center; font-weight: 700; font-size: .92rem; }
+.bar { height: 14px; border: 2px solid var(--ink); border-radius: 99px; overflow: hidden; background: #fff; }
+.bar i { display: block; height: 100%; background: var(--teal); }
+.bar i.low { background: var(--orange); }
+.bar-row .n { text-align: right; font-variant-numeric: tabular-nums; }
+.weak { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.weak li { border: 2.5px solid var(--ink); border-radius: 14px; padding: 10px 12px; background: var(--orange-tint); }
+.weak li b { display: block; }
+.weak li span { font-size: .9rem; }
+.weak li.good { background: #D8F3E4; }
+.review { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.review li { border-bottom: 2px solid var(--line); padding: 6px 0 8px; font-size: .95rem; }
+.review li:last-child { border-bottom: 0; }
+.review .you { color: var(--bad); font-weight: 700; }
+.review .key { color: var(--good); font-weight: 800; }
+.send { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 700; padding: 12px 14px; border: 2.5px solid var(--ink); border-radius: 14px; background: var(--teal-tint); }
+.send.err { background: var(--orange-tint); }
+.send .btn { padding: 8px 14px; font-size: .95rem; box-shadow: 0 3px 0 var(--ink); }
+.res-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.res-actions .btn { flex: 1 1 200px; }
+@media (min-width: 760px) {
+  .results { grid-template-columns: 1fr 1fr; align-items: start; }
+  .results .span { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .res-hero { flex-direction: column; text-align: center; }
+  .bar-row { grid-template-columns: 8.6em 1fr 3em; font-size: .85rem; }
+}
+
+footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 14px 16px 20px; }
+footer a { color: var(--teal-ink); font-weight: 700; }
+canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+@media (prefers-reduced-motion: reduce) { .track, .combo.pop { animation: none !important; } }
+</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
-
-    <!-- HEADER & STAGE INDICATOR BAR -->
-    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 sticky top-0 z-40 flex justify-between items-center shadow-lg">
-        <div class="flex items-center space-x-3">
-            <div class="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                <i data-lucide="beaker" class="w-6 h-6 text-emerald-400 animate-pulse"></i>
-            </div>
-            <div>
-                <h1 class="text-base font-extrabold tracking-tight md:text-xl text-emerald-400 flex items-center gap-1.5">
-                    Reaction Assembly Line
-                    <span id="header-stage-badge" class="hidden text-[10px] uppercase tracking-wider bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/20">Stage 1</span>
-                </h1>
-                <p class="text-[10px] md:text-xs text-slate-400 font-medium">Secondary 3 Chemistry Practice Laboratory</p>
-            </div>
-        </div>
-        
-        <div class="flex items-center space-x-3">
-            <button id="btn-fullscreen" class="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg transition-all flex items-center justify-center shadow-inner" title="Toggle Fullscreen">
-                <i data-lucide="maximize" class="w-5 h-5" id="icon-fullscreen"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- MAIN FRAME CONTAINER -->
-    <main class="flex-1 flex flex-col justify-center items-center px-4 py-4 w-full max-w-4xl mx-auto relative">
-        
-        <!-- START SCREEN -->
-        <div id="screen-start" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl text-center space-y-6 max-w-lg transition-all transform">
-            <div class="space-y-2">
-                <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg">
-                    <i data-lucide="dna" class="w-8 h-8 text-emerald-400 animate-pulse"></i>
-                </div>
-                <h2 class="text-2xl md:text-3xl font-black tracking-tight text-white">Chemical Dispatcher</h2>
-                <p class="text-slate-400 text-sm leading-relaxed">
-                    Identify reaction products under two distinct stages before the conveyor shipment exits the assembly zone! Fully optimized for laptop physical keyboards and touch screens.
-                </p>
-            </div>
-
-            <!-- Two-Stage Visual Map -->
-            <div class="grid grid-cols-2 gap-3 text-left">
-                <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
-                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block">Stage 1: Words</span>
-                    <h3 class="text-xs font-bold text-slate-200">Salt Naming</h3>
-                    <p class="text-[11px] text-slate-400 leading-tight font-medium">Determine and type the correct salt name before the shipment crate leaves the belt!</p>
-                </div>
-                <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1">
-                    <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-widest block">Stage 2: Formulas</span>
-                    <h3 class="text-xs font-bold text-slate-200">Balanced Products</h3>
-                    <p class="text-[11px] text-slate-400 leading-tight font-medium">Select all reaction outputs before the delivery enters the receiver terminal!</p>
-                </div>
-            </div>
-
-            <div class="space-y-3 pt-2">
-                <div class="flex justify-between items-center px-4 py-2.5 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-                    <span class="text-slate-400 font-semibold flex items-center gap-1.5">
-                        <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
-                        Laboratory Record (High Score):
-                    </span>
-                    <span id="txt-high-score" class="text-amber-400 font-bold text-sm">0</span>
-                </div>
-
-                <button id="btn-start" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-base rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
-                    Open Lab Shift
-                    <i data-lucide="play-circle" class="w-5 h-5"></i>
-                </button>
-            </div>
-            
-            <p class="text-slate-600 text-[10px] font-semibold tracking-wide">created by Ms Khoo Xiang Yun & HTML game creator</p>
-        </div>
-
-        <!-- STAGE INTRO OVERLAYS -->
-        <div id="screen-stage-intro" class="w-full hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center space-y-6 max-w-lg transition-all transform duration-300">
-            <div class="space-y-2">
-                <div id="intro-badge" class="inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest">Stage 1</div>
-                <h3 id="intro-title" class="text-2xl font-black text-white">Stage Title</h3>
-                <p id="intro-desc" class="text-slate-400 text-sm leading-relaxed">Stage Description</p>
-            </div>
-            <div id="intro-syllabus-hint" class="bg-slate-950/60 p-4 rounded-xl text-xs text-left text-slate-300 border border-slate-800 space-y-2"></div>
-            <button id="btn-proceed-stage" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1">
-                Begin Assembly
-                <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <!-- PLAYING CONTAINER -->
-        <div id="screen-playing" class="w-full hidden flex-col space-y-4">
-            
-            <!-- TOP BAR PROGRESS STATS -->
-            <div class="grid grid-cols-3 gap-3 w-full">
-                <!-- Score Indicator -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between shadow-md relative overflow-hidden">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i> Score
-                    </span>
-                    <div class="flex items-baseline space-x-1.5 mt-1">
-                        <span id="txt-score" class="text-xl md:text-2xl font-black text-white">0</span>
-                        <span id="txt-multiplier" class="text-[10px] font-bold text-emerald-400 hidden bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">1x Combo</span>
-                    </div>
-                </div>
-
-                <!-- Global Shift Timer -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between shadow-md">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <i data-lucide="clock" class="w-3.5 h-3.5 text-rose-400"></i> Shift Timer
-                    </span>
-                    <div class="mt-1 flex flex-col space-y-1">
-                        <span id="txt-timer" class="text-xl md:text-2xl font-black text-white">90s</span>
-                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                            <div id="bar-timer" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full w-full transition-all duration-200"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step Tracker -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between shadow-md">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-blue-400"></i> Progress
-                    </span>
-                    <span id="txt-progress" class="text-xl md:text-2xl font-black text-white mt-1">0 / 5</span>
-                </div>
-            </div>
-
-            <!-- IMMERSIVE ASSEMBLY GRAPHIC VIEWPORTS -->
-            <div class="relative w-full aspect-[2/1] rounded-2xl border-2 border-slate-800 overflow-hidden shadow-2xl bg-slate-950">
-                <!-- Background visual frame of assembly line -->
-                <img src="ChatGPT Image Jul 15, 2026, 08_50_21 AM.png" alt="Conveyor Belt Backdrop" class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none opacity-85">
-                
-                <!-- Assembly Line Title overlay screen -->
-                <div class="absolute top-[2%] left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-950/90 border border-emerald-500/30 rounded-md text-[10px] md:text-xs text-center uppercase tracking-widest font-black text-emerald-400 shadow-inner max-w-[85%] whitespace-nowrap overflow-hidden text-ellipsis">
-                    <span id="lbl-belt-status">Status: Belt Operational</span>
-                </div>
-
-                <!-- DYNAMIC LAB MONITOR HOLOGRAPHIC EQUATION BOARD -->
-                <div id="target-equation-container" class="absolute top-[16%] left-1/2 -translate-x-1/2 w-[72%] max-w-xl bg-slate-950/95 border border-cyan-500/40 rounded-xl p-2.5 md:p-3 flex flex-col items-center justify-center space-y-1.5 shadow-lg shadow-cyan-950/20">
-                    <span id="txt-equation-prompt-header" class="text-[8px] md:text-[10px] bg-cyan-950/60 border border-cyan-800 px-2 py-0.5 rounded-full text-cyan-300 font-bold uppercase tracking-wider">Loading Equation...</span>
-                    <div id="equation-box" class="flex flex-wrap items-center justify-center gap-1 md:gap-2 text-xs md:text-sm font-extrabold text-center px-1 text-slate-200"></div>
-                </div>
-
-                <!-- CRATE PHYSICAL ASSEMBLY LINE TRACK OVERLAY -->
-                <!-- Tracks exactly on top of the illustrated conveyer graphics -->
-                <div class="absolute top-[68%] left-[8%] w-[84%] h-[12%] pointer-events-none">
-                    <div id="conveyor-crate" class="absolute top-0 left-0 w-12 h-12 md:w-16 md:h-16 -translate-y-4 md:-translate-y-6 transition-all duration-100 ease-linear flex flex-col items-center justify-center pointer-events-none">
-                        <!-- Floating countdown timer above cargo crate -->
-                        <div class="bg-rose-600 text-white text-[8px] md:text-[10px] font-black px-1.5 py-0.5 rounded shadow border border-rose-400 animate-bounce mb-1">
-                            <span id="txt-crate-timer">15s</span>
-                        </div>
-                        <svg class="w-8 h-8 md:w-11 md:h-11 text-emerald-400 crate-glow" id="svg-crate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- INTERACTIVE INPUT MODULES -->
-            <div class="w-full">
-                <!-- STAGE 1 AREA: Word Typing Salt Formed -->
-                <div id="module-stage-1" class="hidden flex flex-col space-y-3">
-                    <div class="flex justify-between items-center px-1">
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                            <i data-lucide="keyboard" class="w-4 h-4 text-emerald-400"></i> Type Salt Name
-                        </span>
-                        <span class="text-[10px] text-slate-500 italic">Select text box to open keyboard</span>
-                    </div>
-
-                    <div class="relative flex items-center">
-                        <input id="input-salt-name" type="text" placeholder="Type salt name (e.g. Sodium chloride)..." autocomplete="off" spellcheck="false" class="w-full bg-slate-950 border-2 border-slate-800 focus:border-emerald-500 focus:outline-none rounded-xl py-3.5 px-4 text-sm md:text-base font-bold text-slate-100 placeholder-slate-600 transition-all shadow-inner pr-10">
-                        <button id="btn-input-clear" class="absolute right-3 text-slate-500 hover:text-slate-300 transition-colors p-1" title="Clear text">
-                            <i data-lucide="x-circle" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-
-                    <button id="btn-submit-stage1" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-                        Submit Salt Name <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <!-- STAGE 2 AREA: Chemical Formulas (Multi-select conveyor) -->
-                <div id="module-stage-2" class="hidden flex flex-col space-y-3">
-                    <div class="flex justify-between items-center px-1">
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                            <i data-lucide="package" class="w-4 h-4 text-cyan-400"></i> Conveyor Belt Products (Multi-Select)
-                        </span>
-                        <span class="text-[10px] text-slate-500 italic">Select all reaction outputs, then dispatch</span>
-                    </div>
-
-                    <div id="conveyor-belt" class="bg-gradient-to-b from-slate-950 to-slate-900 border-2 border-slate-800 rounded-2xl p-4 min-h-[140px] grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-6 items-center justify-center relative shadow-inner"></div>
-
-                    <button id="btn-submit-multiselect" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-                        Dispatch Products <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- FEEDBACK TRANSITIONAL FLOATER -->
-            <div id="feedback-overlay" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center transition-all duration-200 opacity-0 transform scale-75">
-                <div id="feedback-card" class="px-6 py-3.5 rounded-2xl shadow-2xl text-lg font-extrabold border flex items-center gap-2">
-                    <span id="feedback-icon"></span>
-                    <span id="feedback-text">CORRECT</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- RESULTS REPORT -->
-        <div id="screen-result" class="w-full hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl text-center space-y-6 max-w-lg transition-all transform duration-300">
-            <div class="space-y-2">
-                <div id="result-icon-container" class="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="bar-chart-2" class="w-10 h-10 text-emerald-400"></i>
-                </div>
-                <h2 class="text-2xl md:text-3xl font-black tracking-tight text-white">Shift Evaluation Complete!</h2>
-                <p id="txt-result-evaluation" class="text-slate-400 text-sm px-2 leading-relaxed">
-                    Analyzing chemistry proficiency output vectors...
-                </p>
-            </div>
-
-            <div class="bg-slate-950 border border-slate-800 rounded-xl divide-y divide-slate-800/60 text-xs overflow-hidden">
-                <div class="flex justify-between items-center p-3.5">
-                    <span class="text-slate-400 flex items-center gap-2">
-                        <i data-lucide="award" class="w-4 h-4 text-amber-400"></i> Final Score Earned
-                    </span>
-                    <span id="txt-final-score" class="font-black text-white text-sm">0</span>
-                </div>
-                <div class="flex justify-between items-center p-3.5">
-                    <span class="text-slate-400 flex items-center gap-2">
-                        <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Correct Items Checked
-                    </span>
-                    <span id="txt-final-accuracy" class="font-black text-emerald-400 text-sm">0 / 10</span>
-                </div>
-                <div class="flex justify-between items-center p-3.5">
-                    <span class="text-slate-400 flex items-center gap-2">
-                        <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i> Highest Combo Streak
-                    </span>
-                    <span id="txt-final-streak" class="font-black text-cyan-400 text-sm">0</span>
-                </div>
-            </div>
-
-            <div class="pt-2">
-                <button id="btn-restart" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-base rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2">
-                    Run Another Shift <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                </button>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- FOOTER META -->
-    <footer class="text-center py-4 border-t border-slate-900 text-xs text-slate-600 font-medium tracking-wide bg-slate-950/40">
-        Created by Ms Khoo Xiang Yun & HTML game creator
-    </footer>
-
-    <!-- CONFETTI CANVAS -->
-    <canvas id="canvas-confetti" class="fixed inset-0 pointer-events-none z-50 w-full h-full hidden"></canvas>
-
-    <!-- GAME ENGINE CORE SCRIPT -->
-    <script>
-        // --- CURATED SYLLABUS DATABASE (STAGE 1 & 2 COMPREHENSIVE NATIVE DATASETS) ---
-        const STAGE1_QUESTIONS = [
-            { acid: "Hydrochloric acid", reactant: "Sodium hydroxide", saltName: "Sodium chloride", accepted: ["sodium chloride", "sodiumchloride", "nacl"] },
-            { acid: "Sulfuric acid", reactant: "Zinc metal", saltName: "Zinc sulfate", accepted: ["zinc sulfate", "zincsulfate", "znso4"] },
-            { acid: "Nitric acid", reactant: "Calcium carbonate", saltName: "Calcium nitrate", accepted: ["calcium nitrate", "calciumnitrate", "ca(no3)2"] },
-            { acid: "Hydrochloric acid", reactant: "Magnesium oxide", saltName: "Magnesium chloride", accepted: ["magnesium chloride", "magnesiumchloride", "mgcl2"] },
-            { acid: "Sulfuric acid", reactant: "Copper(II) carbonate", saltName: "Copper(II) sulfate", accepted: ["copper(ii) sulfate", "coppersulfate", "copper ii sulfate", "copper sulfate", "cuso4"] },
-            { acid: "Nitric acid", reactant: "Sodium hydroxide", saltName: "Sodium nitrate", accepted: ["sodium nitrate", "sodiumnitrate", "nano3"] },
-            { acid: "Hydrochloric acid", reactant: "Calcium hydroxide", saltName: "Calcium chloride", accepted: ["calcium chloride", "calciumchloride", "cacl2"] },
-            { acid: "Sulfuric acid", reactant: "Iron metal", saltName: "Iron(II) sulfate", accepted: ["iron(ii) sulfate", "iron sulfate", "ferrous sulfate", "feso4"] },
-            { acid: "Nitric acid", reactant: "Potassium carbonate", saltName: "Potassium nitrate", accepted: ["potassium nitrate", "potassiumnitrate", "kno3"] },
-            { acid: "Hydrochloric acid", reactant: "Aluminium metal", saltName: "Aluminium chloride", accepted: ["aluminium chloride", "aluminum chloride", "alcl3"] },
-            { acid: "Nitric acid", reactant: "Magnesium metal", saltName: "Magnesium nitrate", accepted: ["magnesium nitrate", "magnesiumnitrate", "mg(no3)2"] },
-            { acid: "Sulfuric acid", reactant: "Sodium hydroxide", saltName: "Sodium sulfate", accepted: ["sodium sulfate", "sodiumsulfate", "na2so4"] },
-            { acid: "Hydrochloric acid", reactant: "Copper(II) oxide", saltName: "Copper(II) chloride", accepted: ["copper(ii) chloride", "copper chloride", "cucl2"] },
-            { acid: "Nitric acid", reactant: "Potassium hydroxide", saltName: "Potassium nitrate", accepted: ["potassium nitrate", "potassiumnitrate", "kno3"] },
-            { acid: "Sulfuric acid", reactant: "Calcium carbonate", saltName: "Calcium sulfate", accepted: ["calcium sulfate", "calciumsulfate", "caso4"] }
-        ];
-
-        const STAGE2_QUESTIONS = [
-            { reactantA: "HCl", reactantB: "NaOH", correctProducts: ["NaCl", "H2O"] },
-            { reactantA: "H2SO4", reactantB: "Zn", correctProducts: ["ZnSO4", "H2"] },
-            { reactantA: "HNO3", reactantB: "CaCO3", correctProducts: ["Ca(NO3)2", "H2O", "CO2"] },
-            { reactantA: "HCl", reactantB: "MgCO3", correctProducts: ["MgCl2", "H2O", "CO2"] },
-            { reactantA: "H2SO4", reactantB: "CuO", correctProducts: ["CuSO4", "H2O"] },
-            { reactantA: "HNO3", reactantB: "KOH", correctProducts: ["KNO3", "H2O"] },
-            { reactantA: "HCl", reactantB: "Ca(OH)2", correctProducts: ["CaCl2", "H2O"] },
-            { reactantA: "H2SO4", reactantB: "Na2CO3", correctProducts: ["Na2SO4", "H2O", "CO2"] },
-            { reactantA: "HNO3", reactantB: "MgO", correctProducts: ["Mg(NO3)2", "H2O"] },
-            { reactantA: "HCl", reactantB: "Fe", correctProducts: ["FeCl2", "H2"] },
-            { reactantA: "HNO3", reactantB: "NaOH", correctProducts: ["NaNO3", "H2O"] },
-            { reactantA: "H2SO4", reactantB: "Mg", correctProducts: ["MgSO4", "H2"] },
-            { reactantA: "HCl", reactantB: "K2CO3", correctProducts: ["KCl", "H2O", "CO2"] },
-            { reactantA: "H2SO4", reactantB: "Ca(OH)2", correctProducts: ["CaSO4", "H2O"] },
-            { reactantA: "HNO3", reactantB: "Zn", correctProducts: ["Zn(NO3)2", "H2"] }
-        ];
-
-        // Global list of chemical symbols for generating options dynamically
-        const CHEMICAL_DISTRACTOR_POOL = [
-            "H2", "H2O", "CO2", "O2", "NaCl", "NaOH", "HCl", "Cl2", "Mg(OH)2", "ZnO", "CO",
-            "ZnSO4", "CuSO4", "Ca(NO3)2", "MgCl2", "Na2SO4", "FeCl2", "H2SO4", "KNO3", "CaCl2",
-            "NaNO3", "MgSO4", "KCl", "CaSO4", "Zn(NO3)2", "NO2", "HNO3", "NH3"
-        ];
-
-        // --- CORE GAME CONTROLLER STATE ---
-        let gameState = {
-            screen: "start", // start | stage_intro | playing | result
-            stage: 1, // 1 | 2
-            score: 0,
-            streak: 0,
-            maxStreak: 0,
-            questionsAttempted: 0,
-            correctAnswersCount: 0,
-            currentQIndex: 0,
-            timeLeft: 90,
-            timerInterval: null,
-            
-            // Sub stage states
-            stage2Selections: [], // selected formula strings
-
-            // Conveyor crate movement states
-            cratePos: 0,
-            crateTimeLeft: 15,
-            crateTimerInterval: null,
-            cratePaused: false
-        };
-
-        // --- STREAMING_CHUNK: Setup Sound Engine Synthesis ---
-        // --- AUDIO ENGINE ---
-        const AudioEngine = {
-            ctx: null,
-            init() {
-                if (!this.ctx) {
-                    try {
-                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    } catch (e) {
-                        console.warn("Audio Context activation failed.");
-                    }
-                }
-            },
-            playTone(freq, type, duration, gainStart) {
-                this.init();
-                if (!this.ctx) return;
-                try {
-                    if (this.ctx.state === 'suspended') {
-                        this.ctx.resume();
-                    }
-                    const osc = this.ctx.createOscillator();
-                    const gainNode = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gainNode.gain.setValueAtTime(gainStart, this.ctx.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
-                    osc.connect(gainNode);
-                    gainNode.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch(e) { console.error(e); }
-            },
-            correct() {
-                this.playTone(523.25, 'sine', 0.15, 0.25);
-                setTimeout(() => this.playTone(659.25, 'sine', 0.25, 0.25), 80);
-            },
-            wrong() {
-                this.playTone(170, 'sawtooth', 0.35, 0.3);
-            },
-            gameOver() {
-                this.playTone(220, 'sawtooth', 0.2, 0.25);
-                setTimeout(() => this.playTone(147, 'sawtooth', 0.4, 0.25), 150);
-            },
-            fanfare() {
-                const notes = [261.63, 329.63, 392.00, 523.25];
-                notes.forEach((n, idx) => {
-                    setTimeout(() => this.playTone(n, 'triangle', 0.4, 0.2), idx * 110);
-                });
-            }
-        };
-
-        // --- SHUFFLER ---
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
-        }
-
-        // --- SUBSCRIPT FORMATTING HOOK ---
-        function parseFormulaMarkup(formula) {
-            return formula.replace(/([A-Za-z\)\(])([0-9]+)/g, '$1<sub>$2</sub>');
-        }
-
-        // --- DYNAMIC SMART OPTION GENERATOR ---
-        function generateSmartOptions(correctProducts) {
-            let optionsSet = new Set(correctProducts);
-            let pool = shuffle([...CHEMICAL_DISTRACTOR_POOL]);
-            while (optionsSet.size < 6 && pool.length > 0) {
-                optionsSet.add(pool.pop());
-            }
-            return shuffle(Array.from(optionsSet));
-        }
-
-        // --- STREAMING_CHUNK: Setup Screen State Configurations ---
-        // --- SCREEN MANAGER ---
-        function updateScreenLayout() {
-            document.getElementById("screen-start").classList.add("hidden");
-            document.getElementById("screen-stage-intro").classList.add("hidden");
-            document.getElementById("screen-playing").classList.add("hidden");
-            document.getElementById("screen-result").classList.add("hidden");
-
-            const stageBadge = document.getElementById("header-stage-badge");
-
-            if (gameState.screen === "start") {
-                document.getElementById("screen-start").classList.remove("hidden");
-                stageBadge.classList.add("hidden");
-                
-                let record = 0;
-                try { record = localStorage.getItem("chem_high_score") || 0; } catch(e) {}
-                document.getElementById("txt-high-score").innerText = record;
-            } 
-            else if (gameState.screen === "stage_intro") {
-                document.getElementById("screen-stage-intro").classList.remove("hidden");
-                stageBadge.classList.add("hidden");
-                configureStageIntro();
-            } 
-            else if (gameState.screen === "playing") {
-                document.getElementById("screen-playing").classList.remove("hidden");
-                stageBadge.classList.remove("hidden");
-                stageBadge.innerText = `Stage ${gameState.stage}`;
-                
-                document.getElementById("module-stage-1").classList.add("hidden");
-                document.getElementById("module-stage-2").classList.add("hidden");
-
-                if (gameState.stage === 1) {
-                    document.getElementById("module-stage-1").classList.remove("hidden");
-                } else {
-                    document.getElementById("module-stage-2").classList.remove("hidden");
-                }
-            } 
-            else if (gameState.screen === "result") {
-                document.getElementById("screen-result").classList.remove("hidden");
-                stageBadge.classList.add("hidden");
-            }
-            refreshIcons();
-        }
-
-        // --- DYNAMIC INTRO REMINDERS ---
-        function configureStageIntro() {
-            const badge = document.getElementById("intro-badge");
-            const title = document.getElementById("intro-title");
-            const desc = document.getElementById("intro-desc");
-            const hintBox = document.getElementById("intro-syllabus-hint");
-
-            if (gameState.stage === 1) {
-                badge.className = "inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest bg-emerald-500/10 text-emerald-300 border border-emerald-500/20";
-                badge.innerText = "Stage 1";
-                title.innerText = "Word Salts Typing Lab";
-                desc.innerText = "You will be presented with standard reactions in word format. Determine and type the name of the salt produced using the keyboard before the crate slides off the belt!";
-                
-                hintBox.innerHTML = `
-                    <span class="text-amber-400 font-bold block mb-1">Remember the naming keys:</span>
-                    <ul class="space-y-1 list-disc list-inside text-slate-300">
-                        <li>Hydrochloric Acid yields <strong class="text-slate-100">Chloride Salts</strong></li>
-                        <li>Sulfuric Acid yields <strong class="text-slate-100">Sulfate Salts</strong></li>
-                        <li>Nitric Acid yields <strong class="text-slate-100">Nitrate Salts</strong></li>
-                    </ul>
-                `;
-            } else {
-                badge.className = "inline-block px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest bg-cyan-500/10 text-cyan-300 border border-cyan-500/20";
-                badge.innerText = "Stage 2";
-                title.innerText = "Formula Dispatch Multi-Select";
-                desc.innerText = "We are using formal chemical symbols. Select ALL products of the reaction from the conveyer options before the crate enters the final terminal!";
-                
-                hintBox.innerHTML = `
-                    <span class="text-amber-400 font-bold block mb-1">Look out for all products:</span>
-                    <ul class="space-y-1 list-disc list-inside text-slate-300">
-                        <li>Acids with Carbonates yield <strong class="text-slate-100">Salt + Water + Carbon Dioxide</strong></li>
-                        <li>Acids with Bases yield <strong class="text-slate-100">Salt + Water</strong></li>
-                        <li>Acids with Metals yield <strong class="text-slate-100">Salt + Hydrogen Gas</strong></li>
-                    </ul>
-                `;
-            }
-        }
-
-        // --- STREAMING_CHUNK: Fullscreen and Shift Controls setup ---
-        // --- FULLSCREEN CONTROLS ---
-        document.getElementById("btn-fullscreen").addEventListener("click", () => {
-            const icon = document.getElementById("icon-fullscreen");
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => console.error(err));
-                icon.setAttribute("data-lucide", "minimize");
-            } else {
-                document.exitFullscreen();
-                icon.setAttribute("data-lucide", "maximize");
-            }
-            refreshIcons();
-        });
-
-        // --- GAME START COUPLING ---
-        function initiateGameShift() {
-            AudioEngine.init();
-            gameState.score = 0;
-            gameState.streak = 0;
-            gameState.maxStreak = 0;
-            gameState.questionsAttempted = 0;
-            gameState.correctAnswersCount = 0;
-            gameState.timeLeft = 90;
-            
-            // Randomize our native database questions on start
-            shuffle(STAGE1_QUESTIONS);
-            shuffle(STAGE2_QUESTIONS);
-
-            gameState.stage = 1;
-            gameState.currentQIndex = 0;
-            gameState.screen = "stage_intro";
-            
-            updateScreenLayout();
-            
-            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
-            gameState.timerInterval = setInterval(() => {
-                if (gameState.screen === "playing") {
-                    gameState.timeLeft--;
-                    document.getElementById("txt-timer").innerText = gameState.timeLeft + "s";
-                    const perc = (gameState.timeLeft / 90) * 100;
-                    const bar = document.getElementById("bar-timer");
-                    bar.style.width = `${perc}%`;
-                    
-                    if (gameState.timeLeft <= 15) {
-                        bar.className = "bg-gradient-to-r from-rose-500 to-red-600 h-full w-full transition-all duration-200 animate-pulse";
-                    } else {
-                        bar.className = "bg-gradient-to-r from-emerald-400 to-teal-500 h-full w-full transition-all duration-200";
-                    }
-
-                    if (gameState.timeLeft <= 0) {
-                        finishEntireShift();
-                    }
-                }
-            }, 1000);
-        }
-
-        // --- STREAMING_CHUNK: Setup Conveyor Belt Physics Engine ---
-        // --- INTERACTIVE CRATE PHYSICS AND CONVEYOR INTERVALS ---
-        function startConveyorCrateAnimation() {
-            if (gameState.crateTimerInterval) clearInterval(gameState.crateTimerInterval);
-            
-            gameState.cratePos = 0;
-            gameState.crateTimeLeft = 15;
-            gameState.cratePaused = false;
-
-            const crateElement = document.getElementById("conveyor-crate");
-            const timerElement = document.getElementById("txt-crate-timer");
-            const svgCrate = document.getElementById("svg-crate");
-            const statusLabel = document.getElementById("lbl-belt-status");
-
-            crateElement.style.left = `0%`;
-            timerElement.innerText = `15s`;
-            svgCrate.setAttribute("class", "w-8 h-8 md:w-11 md:h-11 text-emerald-400 crate-glow");
-            statusLabel.innerText = "Status: Belt Moving - Active Shipment";
-            statusLabel.className = "text-emerald-400";
-
-            const intervalDuration = 100; // ms
-            const totalTicks = (15 * 1000) / intervalDuration;
-            let currentTick = 0;
-
-            gameState.crateTimerInterval = setInterval(() => {
-                if (gameState.screen !== "playing" || gameState.cratePaused) return;
-
-                currentTick++;
-                gameState.cratePos = (currentTick / totalTicks) * 100;
-                crateElement.style.left = `${gameState.cratePos}%`;
-
-                const secondsElapsed = Math.floor((currentTick * intervalDuration) / 1000);
-                gameState.crateTimeLeft = Math.max(0, 15 - secondsElapsed);
-                timerElement.innerText = `${gameState.crateTimeLeft}s`;
-
-                if (gameState.crateTimeLeft <= 5) {
-                    svgCrate.setAttribute("class", "w-8 h-8 md:w-11 md:h-11 text-rose-500 crate-glow-warning animate-pulse");
-                    statusLabel.innerText = "WARNING: Shipment nearing terminal exit!";
-                    statusLabel.className = "text-rose-500 font-extrabold animate-pulse";
-                }
-
-                if (gameState.cratePos >= 100 || gameState.crateTimeLeft <= 0) {
-                    clearInterval(gameState.crateTimerInterval);
-                    processCrateTimeout();
-                }
-            }, intervalDuration);
-        }
-
-        function stopConveyorCrateAnimation() {
-            gameState.cratePaused = true;
-            if (gameState.crateTimerInterval) {
-                clearInterval(gameState.crateTimerInterval);
-            }
-        }
-
-        function processCrateTimeout() {
-            gameState.cratePaused = true;
-            const statusLabel = document.getElementById("lbl-belt-status");
-            statusLabel.innerText = "ERROR: Shipment Misaligned / Expired!";
-            statusLabel.className = "text-rose-600 font-black";
-
-            triggerAnswerFeedback(false, () => {
-                gameState.streak = 0;
-                gameState.questionsAttempted++;
-                gameState.currentQIndex++;
-                
-                checkStageProgress();
-            });
-        }
-
-        function checkStageProgress() {
-            if (gameState.currentQIndex >= 5) {
-                if (gameState.stage === 1) {
-                    gameState.stage = 2;
-                    gameState.currentQIndex = 0;
-                    gameState.screen = "stage_intro";
-                    updateScreenLayout();
-                } else {
-                    finishEntireShift();
-                }
-            } else {
-                loadCurrentQuestion();
-            }
-        }
-
-        // --- STREAMING_CHUNK: Setup Question & Stage render engines ---
-        // --- QUESTION ENGINE ---
-        function loadCurrentQuestion() {
-            const progressTxt = document.getElementById("txt-progress");
-            const scoreTxt = document.getElementById("txt-score");
-            const comboTag = document.getElementById("txt-multiplier");
-
-            progressTxt.innerText = `${gameState.currentQIndex + 1} / 5`;
-            scoreTxt.innerText = gameState.score;
-
-            if (gameState.streak >= 2) {
-                comboTag.innerText = `${gameState.streak}x Combo`;
-                comboTag.classList.remove("hidden");
-            } else {
-                comboTag.classList.add("hidden");
-            }
-
-            if (gameState.stage === 1) {
-                renderStage1Layout();
-            } else {
-                renderStage2Layout();
-            }
-
-            startConveyorCrateAnimation();
-        }
-
-        // --- STAGE 1 WORD LAYOUTS ---
-        function renderStage1Layout() {
-            const q = STAGE1_QUESTIONS[gameState.currentQIndex % STAGE1_QUESTIONS.length];
-            document.getElementById("txt-equation-prompt-header").innerText = "Syllabus Salt Equation Typing Shift";
-            
-            const saltInput = document.getElementById("input-salt-name");
-            saltInput.value = "";
-            saltInput.disabled = false;
-            setTimeout(() => saltInput.focus(), 100);
-
-            const eqBox = document.getElementById("equation-box");
-            eqBox.innerHTML = `
-                <span class="bg-slate-900/95 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-200">${q.acid}</span>
-                <span class="text-emerald-400 font-black">+</span>
-                <span class="bg-slate-900/95 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-200">${q.reactant}</span>
-                <span class="text-emerald-400 font-black">&rarr;</span>
-                <span class="bg-emerald-500/20 border border-dashed border-emerald-500/50 px-3 py-1 rounded-lg text-emerald-300 font-extrabold min-w-[100px] text-center inline-block">?</span>
-                <span class="text-slate-500 font-bold">+</span>
-                <span class="text-slate-400 text-xs font-semibold">Other Product(s)</span>
-            `;
-        }
-
-        function evaluateStage1Answer() {
-            stopConveyorCrateAnimation();
-
-            const saltInput = document.getElementById("input-salt-name");
-            saltInput.disabled = true;
-            const typedAnswer = saltInput.value;
-
-            const q = STAGE1_QUESTIONS[gameState.currentQIndex % STAGE1_QUESTIONS.length];
-            const cleanInput = typedAnswer.trim().toLowerCase().replace(/\s+/g, ' ');
-            
-            const isCorrect = q.accepted.includes(cleanInput);
-            triggerAnswerFeedback(isCorrect, () => {
-                if (isCorrect) {
-                    gameState.correctAnswersCount++;
-                    gameState.streak++;
-                    if (gameState.streak > gameState.maxStreak) gameState.maxStreak = gameState.streak;
-                    
-                    const calculatedPoints = 120 * (gameState.streak >= 2 ? gameState.streak : 1);
-                    gameState.score += calculatedPoints;
-                } else {
-                    gameState.streak = 0;
-                }
-                
-                gameState.questionsAttempted++;
-                gameState.currentQIndex++;
-                
-                checkStageProgress();
-            });
-        }
-
-        // --- STAGE 2 FORMULA LAYOUTS (MULTI-SELECT) ---
-        function renderStage2Layout() {
-            const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
-            document.getElementById("txt-equation-prompt-header").innerText = "Syllabus Multiple Product Dispatch Shift";
-            
-            gameState.stage2Selections = [];
-
-            const eqBox = document.getElementById("equation-box");
-            eqBox.innerHTML = `
-                <span class="bg-slate-900/95 border border-slate-700 px-2 py-1 rounded-lg text-slate-200 font-mono text-xs">${parseFormulaMarkup(q.reactantA)}</span>
-                <span class="text-cyan-400 font-black">+</span>
-                <span class="bg-slate-900/95 border border-slate-700 px-2 py-1 rounded-lg text-slate-200 font-mono text-xs">${parseFormulaMarkup(q.reactantB)}</span>
-                <span class="text-cyan-400 font-black">&rarr;</span>
-                <span class="bg-cyan-500/20 border border-dashed border-cyan-500/50 px-3 py-1 rounded-lg text-cyan-300 font-extrabold min-w-[120px] text-center text-xs">Select Products</span>
-            `;
-
-            renderConveyorBeltOptions();
-        }
-
-        function renderConveyorBeltOptions() {
-            const belt = document.getElementById("conveyor-belt");
-            belt.innerHTML = "";
-            
-            const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
-            
-            // Generate dynamically aligned options for this specific question
-            const questionsOptions = generateSmartOptions(q.correctProducts);
-            
-            questionsOptions.forEach(formula => {
-                const button = document.createElement("button");
-                button.className = "conveyor-item w-full py-3 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl font-bold font-mono text-center text-slate-300 flex flex-col items-center justify-center gap-1 shadow-md cursor-pointer transition-all interactive-scale text-xs";
-                
-                button.innerHTML = `
-                    <span class="text-xs md:text-sm font-black tracking-wide">${parseFormulaMarkup(formula)}</span>
-                    <span class="selection-indicator text-[8px] uppercase font-bold text-slate-500 tracking-wider">Tap to load</span>
-                `;
-                
-                const toggleSelection = (e) => {
-                    e.preventDefault();
-                    const index = gameState.stage2Selections.indexOf(formula);
-                    if (index > -1) {
-                        gameState.stage2Selections.splice(index, 1);
-                        button.className = "conveyor-item w-full py-3 px-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl font-bold font-mono text-center text-slate-300 flex flex-col items-center justify-center gap-1 shadow-md cursor-pointer transition-all interactive-scale text-xs";
-                        button.querySelector(".selection-indicator").innerText = "Tap to load";
-                        button.querySelector(".selection-indicator").className = "selection-indicator text-[8px] uppercase font-bold text-slate-500 tracking-wider";
-                    } else {
-                        gameState.stage2Selections.push(formula);
-                        button.className = "conveyor-item w-full py-3 px-2 bg-cyan-950/80 hover:bg-cyan-900/80 border-2 border-cyan-500 rounded-xl font-bold font-mono text-center text-cyan-300 flex flex-col items-center justify-center gap-1 shadow-md cursor-pointer transition-all scale-[1.02] relative text-xs";
-                        button.querySelector(".selection-indicator").innerText = "Loaded on belt";
-                        button.querySelector(".selection-indicator").className = "selection-indicator text-[8px] uppercase font-extrabold text-cyan-400 tracking-wider";
-                    }
-                };
-
-                button.addEventListener("click", toggleSelection);
-                belt.appendChild(button);
-            });
-        }
-
-        function evaluateStage2Answer() {
-            stopConveyorCrateAnimation();
-
-            const q = STAGE2_QUESTIONS[gameState.currentQIndex % STAGE2_QUESTIONS.length];
-            
-            const sortedSelections = [...gameState.stage2Selections].sort();
-            const sortedCorrect = [...q.correctProducts].sort();
-
-            const isCorrect = (sortedSelections.length === sortedCorrect.length) && 
-                              sortedSelections.every((val, index) => val === sortedCorrect[index]);
-
-            triggerAnswerFeedback(isCorrect, () => {
-                if (isCorrect) {
-                    gameState.correctAnswersCount++;
-                    gameState.streak++;
-                    if (gameState.streak > gameState.maxStreak) gameState.maxStreak = gameState.streak;
-                    
-                    const calculatedPoints = 150 * (gameState.streak >= 2 ? gameState.streak : 1);
-                    gameState.score += calculatedPoints;
-                } else {
-                    gameState.streak = 0;
-                }
-
-                gameState.questionsAttempted++;
-                gameState.currentQIndex++;
-
-                checkStageProgress();
-            });
-        }
-
-        // --- STREAMING_CHUNK: Setup Sound and Overlay Animations ---
-        // --- VISUAL & AUDIO FEEDBACK LAYOVER ---
-        function triggerAnswerFeedback(isCorrect, callback) {
-            const overlay = document.getElementById("feedback-overlay");
-            const card = document.getElementById("feedback-card");
-            const icon = document.getElementById("feedback-icon");
-            const text = document.getElementById("feedback-text");
-            const targetContainer = document.getElementById("target-equation-container");
-
-            if (isCorrect) {
-                AudioEngine.correct();
-                card.className = "px-6 py-3.5 rounded-2xl shadow-2xl text-base font-extrabold border bg-emerald-950/95 border-emerald-500 text-emerald-400 flex items-center gap-2 animate-bounce";
-                icon.innerHTML = `<i data-lucide="check" class="w-5 h-5 text-emerald-400"></i>`;
-                text.innerText = "PRODUCT VERIFIED";
-            } else {
-                AudioEngine.wrong();
-                card.className = "px-6 py-3.5 rounded-2xl shadow-2xl text-base font-extrabold border bg-rose-950/95 border-rose-500 text-rose-400 flex items-center gap-2 animate-shake";
-                icon.innerHTML = `<i data-lucide="alert-circle" class="w-5 h-5 text-rose-400"></i>`;
-                text.innerText = "REACTION MISMATCH";
-                
-                targetContainer.classList.add("animate-shake");
-                setTimeout(() => {
-                    targetContainer.classList.remove("animate-shake");
-                }, 400);
-            }
-            refreshIcons();
-
-            overlay.classList.remove("opacity-0", "scale-75");
-            overlay.classList.add("opacity-100", "scale-100");
-
-            setTimeout(() => {
-                overlay.classList.remove("opacity-100", "scale-100");
-                overlay.classList.add("opacity-0", "scale-75");
-                callback();
-            }, 1000);
-        }
-
-        // --- STREAMING_CHUNK: Setup Confetti Particles Launcher ---
-        // --- CONFETTI LAUNCH CONTROLLER ---
-        const ConfettiEngine = {
-            canvas: null,
-            ctx: null,
-            particles: [],
-            active: false,
-            init() {
-                this.canvas = document.getElementById("canvas-confetti");
-                this.ctx = this.canvas.getContext("2d");
-            },
-            resize() {
-                if (this.canvas) {
-                    this.canvas.width = window.innerWidth;
-                    this.canvas.height = window.innerHeight;
-                }
-            },
-            start() {
-                this.init();
-                this.resize();
-                window.addEventListener('resize', () => this.resize());
-                this.canvas.classList.remove("hidden");
-                this.active = true;
-                this.particles = [];
-                for (let i = 0; i < 80; i++) {
-                    this.particles.push({
-                        x: Math.random() * this.canvas.width,
-                        y: Math.random() * this.canvas.height - this.canvas.height,
-                        r: Math.random() * 5 + 3,
-                        d: Math.random() * this.canvas.height,
-                        color: `hsl(${Math.random() * 360}, 85%, 60%)`,
-                        tilt: Math.random() * 10 - 5,
-                        tiltAngleIncremental: Math.random() * 0.08 + 0.02,
-                        tiltAngle: 0
-                    });
-                }
-                this.animate();
-            },
-            stop() {
-                this.active = false;
-                if (this.canvas) this.canvas.classList.add("hidden");
-            },
-            animate() {
-                if (!this.active) return;
-                requestAnimationFrame(() => this.animate());
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                this.particles.forEach((p, idx) => {
-                    p.tiltAngle += p.tiltAngleIncremental;
-                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
-                    p.x += Math.sin(p.tiltAngle);
-                    p.tilt = Math.sin(p.tiltAngle - idx / 3) * 12;
-
-                    this.ctx.beginPath();
-                    this.ctx.lineWidth = p.r;
-                    this.ctx.strokeStyle = p.color;
-                    this.ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
-                    this.ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
-                    this.ctx.stroke();
-                });
-
-                if (this.particles.every(p => p.y > this.canvas.height)) {
-                    this.stop();
-                }
-            }
-        };
-
-        // --- STREAMING_CHUNK: Setup Score Evaluator and Game Over Panels ---
-        // --- EVALUATE FINAL SHIFT ---
-        function finishEntireShift() {
-            stopConveyorCrateAnimation();
-            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
-            gameState.screen = "result";
-            AudioEngine.gameOver();
-
-            try {
-                const currentHigh = parseInt(localStorage.getItem("chem_high_score") || "0", 10);
-                if (gameState.score > currentHigh) {
-                    localStorage.setItem("chem_high_score", gameState.score);
-                }
-            } catch(e) {}
-
-            const evaluationText = document.getElementById("txt-result-evaluation");
-            const iconContainer = document.getElementById("result-icon-container");
-
-            document.getElementById("txt-final-score").innerText = gameState.score;
-            document.getElementById("txt-final-accuracy").innerText = `${gameState.correctAnswersCount} / ${gameState.questionsAttempted}`;
-            document.getElementById("txt-final-streak").innerText = gameState.maxStreak;
-
-            const accuracyPercentage = gameState.questionsAttempted > 0 ? Math.round((gameState.correctAnswersCount / gameState.questionsAttempted) * 100) : 0;
-
-            if (accuracyPercentage >= 80) {
-                evaluationText.innerHTML = "Superb! Master level chemical alignment verified. You completely understand both naming rules and chemical formula products.";
-                iconContainer.className = "w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20 text-emerald-400";
-                iconContainer.innerHTML = `<i data-lucide="award" class="w-10 h-10"></i>`;
-                AudioEngine.fanfare();
-                ConfettiEngine.start();
-            } else if (accuracyPercentage >= 50) {
-                evaluationText.innerHTML = "Good shift complete. You have a stable grasp of products, but check your typing spelling and multi-product formulas.";
-                iconContainer.className = "w-20 h-20 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-cyan-400";
-                iconContainer.innerHTML = `<i data-lucide="thumbs-up" class="w-10 h-10"></i>`;
-            } else {
-                evaluationText.innerHTML = "Shift completed with warnings. Remember standard patterns: Metal generates Hydrogen, Carbonate produces Carbon Dioxide, Bases produce Water.";
-                iconContainer.className = "w-20 h-20 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg text-amber-400";
-                iconContainer.innerHTML = `<i data-lucide="alert-triangle" class="w-10 h-10"></i>`;
-            }
-
-            updateScreenLayout();
-        }
-
-        // --- BUTTON LISTENER ASSIGNMENTS ---
-        document.getElementById("btn-start").addEventListener("click", initiateGameShift);
-        
-        document.getElementById("btn-proceed-stage").addEventListener("click", () => {
-            gameState.screen = "playing";
-            updateScreenLayout();
-            loadCurrentQuestion();
-        });
-
-        document.getElementById("btn-input-clear").addEventListener("click", () => {
-            const saltInput = document.getElementById("input-salt-name");
-            saltInput.value = "";
-            saltInput.focus();
-        });
-
-        document.getElementById("btn-submit-stage1").addEventListener("click", evaluateStage1Answer);
-
-        document.getElementById("input-salt-name").addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                evaluateStage1Answer();
-            }
-        });
-
-        document.getElementById("btn-submit-multiselect").addEventListener("click", evaluateStage2Answer);
-        
-        document.getElementById("btn-restart").addEventListener("click", () => {
-            ConfettiEngine.stop();
-            initiateGameShift();
-        });
-
-        // --- SAFE ICON REFRESH HELPER ---
-        function refreshIcons() {
-            try {
-                if (typeof lucide !== 'undefined') {
-                    if (typeof lucide.createIcons === 'function') {
-                        lucide.createIcons();
-                    } else if (typeof lucide.replace === 'function') {
-                        lucide.replace();
-                    }
-                }
-            } catch (e) {
-                console.warn("Lucide icons rendering failed: ", e);
-            }
-        }
-
-        window.onload = function () {
-            updateScreenLayout();
-        }
-    </script>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="https://scienceiskhool.github.io/scienceiskhool/" target="_blank" rel="noopener">
+    <img src="https://scienceiskhool.github.io/scienceiskhool/assets/img/head.png" alt="" onerror="this.style.visibility='hidden'">
+    <span><b>Acid Factory</b><small>Science is Khool · Acids &amp; salts</small></span>
+  </a>
+  <button class="icon-btn" id="btn-sound" type="button" aria-label="Sound on" title="Sound">
+    <svg id="ic-sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+  </button>
+  <button class="icon-btn" id="btn-full" type="button" aria-label="Full screen" title="Full screen" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+  </button>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ START ============ -->
+  <section id="scr-start" class="start">
+    <div class="card hero">
+      <div>
+        <span class="pill">Sec 3 Chemistry · Acids</span>
+        <h1>Acid <em>Factory</em></h1>
+        <p>Crates of reactants are rolling down the belt. Work out what each acid reaction makes before the crate leaves the factory!</p>
+      </div>
+      <img class="mascot" src="https://scienceiskhool.github.io/scienceiskhool/assets/img/mascots/test-tube.png" alt="" onerror="this.style.display='none'">
+    </div>
+
+    <form class="card form" id="form-start" novalidate>
+      <h2>Clock in</h2>
+      <div class="stages">
+        <div class="stage-card"><b>Stage 1 · Name it</b><span>Type the name of the salt made. 5 crates.</span></div>
+        <div class="stage-card s2"><b>Stage 2 · Formulae</b><span>Tap every product of the reaction. 5 crates.</span></div>
+      </div>
+      <div class="fields">
+        <label class="f full" for="in-name">Name<input id="in-name" name="name" maxlength="60" autocomplete="name" required></label>
+        <label class="f" for="in-cls">Class<select id="in-cls" name="cls" required><option value="">Choose…</option></select></label>
+        <label class="f" for="in-reg">Register no.<input id="in-reg" name="reg" inputmode="numeric" pattern="[0-9]*" maxlength="2" required></label>
+      </div>
+      <p class="form-err" id="form-err" role="alert"></p>
+      <button class="btn big" type="submit">Start shift ▶</button>
+      <div class="best"><span>Your best points on this device</span><b id="txt-best">0</b></div>
+    </form>
+  </section>
+
+  <!-- ============ STAGE INTRO ============ -->
+  <section id="scr-intro" class="card intro" hidden>
+    <span class="pill" id="intro-pill">Stage 1 of 2</span>
+    <h2 id="intro-title">Name the salt</h2>
+    <p id="intro-desc"></p>
+    <div class="rules" id="intro-rules"></div>
+    <button class="btn big" id="btn-go" type="button">Roll the belt ▶</button>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section id="scr-play" class="play" hidden>
+    <div class="hud">
+      <div class="row">
+        <div class="score"><small>Points</small><span id="txt-points">0</span></div>
+        <span class="combo" id="txt-combo" hidden>2× combo!</span>
+      </div>
+      <div class="row">
+        <div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <span class="stage-tag" id="txt-stage">STAGE 1 · CRATE 1/5</span>
+      </div>
+      <div class="eq" id="eq" aria-live="polite"></div>
+    </div>
+
+    <div class="belt" id="belt" aria-hidden="true">
+      <div class="ring" id="ring"><span id="txt-secs">20</span></div>
+      <div class="crate" id="crate">?</div>
+      <div class="track"></div>
+    </div>
+
+    <div class="controls">
+      <!-- stage 1 -->
+      <div id="ctl-type" hidden>
+        <div class="ctl-label" style="margin-bottom:8px">Type the salt's name</div>
+        <form class="type-row" id="form-type" autocomplete="off">
+          <input id="in-salt" type="text" enterkeyhint="send" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="e.g. sodium chloride" aria-label="Salt name">
+          <button class="btn" type="submit">Ship</button>
+        </form>
+        <p class="type-help">Spelling counts. Write (II) for copper and iron salts.</p>
+      </div>
+      <!-- stage 2 -->
+      <div id="ctl-pick" hidden>
+        <div class="ctl-label" style="margin-bottom:8px">Tap all the products</div>
+        <div class="opts" id="opts"></div>
+        <button class="btn big" id="btn-ship" type="button" style="margin-top:12px">Ship it!</button>
+      </div>
+      <!-- feedback -->
+      <div class="feedback" id="fb" hidden aria-live="assertive">
+        <h3 id="fb-title"></h3>
+        <p id="fb-body"></p>
+        <p class="tip" id="fb-tip" hidden></p>
+        <button class="btn teal" id="btn-next" type="button">Next crate →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="scr-result" class="results" hidden>
+    <div class="card res-hero span">
+      <div class="big-ring" id="res-ring"><span id="res-pct">0%</span></div>
+      <div>
+        <h2 id="res-title">Shift complete!</h2>
+        <p id="res-msg"></p>
+      </div>
+    </div>
+    <div class="stats span">
+      <div class="stat"><span>Correct</span><b id="res-correct">0/10</b></div>
+      <div class="stat"><span>Accuracy</span><b id="res-acc">0%</b></div>
+      <div class="stat"><span>Time</span><b id="res-time">0:00</b></div>
+      <div class="stat"><span>Points</span><b id="res-points">0</b></div>
+    </div>
+    <div class="card panel">
+      <h3>How you did by reaction</h3>
+      <div class="bars" id="res-bars"></div>
+      <h3 style="margin-top:6px">What to work on</h3>
+      <ul class="weak" id="res-weak"></ul>
+    </div>
+    <div class="card panel">
+      <h3>Check your mistakes</h3>
+      <ul class="review" id="res-review"></ul>
+    </div>
+    <div class="send span" id="send" aria-live="polite"><span id="send-msg">Sending your results to Ms Khoo…</span><button class="btn alt" id="btn-resend" type="button" hidden>Try again</button></div>
+    <div class="res-actions span">
+      <button class="btn big" id="btn-again" type="button">Play again ↻</button>
+    </div>
+  </section>
+</main>
+
+<footer>Created by Ms Khoo Xiang Yun · <a href="https://scienceiskhool.github.io/scienceiskhool/" target="_blank" rel="noopener">Science is Khool</a></footer>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(function () {
+"use strict";
+
+/* =================== SETTINGS (safe to edit) =================== */
+var SUBMIT_URL = "https://script.google.com/macros/s/AKfycbxCTjRCQzLlWXmmY-5R0p75WCmeFLzC9ZM3gNbGRXpcc_d9qHMXdyCn12B4dHpnrBWe/exec";
+var SHEET_TAB = "Acid Factory";              // tab name in your Google Sheet
+var ACTIVITY = "Acid reactions game";        // shows in the "Chapter" column
+var SECONDS_STAGE1 = 20;                     // time per crate when typing names
+var SECONDS_STAGE2 = 15;                     // time per crate when picking formulae
+var CRATES_PER_STAGE = 5;
+var CLASSES = [];
+["S1", "S2", "S3", "S4"].forEach(function (l) {
+  ["Charity", "Courage", "Faith", "Hope", "Humility", "Integrity", "Love", "Respect", "Joy"].forEach(function (v) { CLASSES.push(l + " " + v); });
+});
+CLASSES.push("S5 Faith", "Other");
+
+/* =================== CHEMISTRY DATA =================== */
+// Metals: name used in salt names, symbol, charge
+var M = {
+  Mg: { name: "magnesium", ch: 2 }, Zn: { name: "zinc", ch: 2 }, Fe: { name: "iron(II)", plain: "iron", ch: 2 },
+  Ca: { name: "calcium", ch: 2 }, Al: { name: "aluminium", ch: 3 }, Cu: { name: "copper(II)", plain: "copper", ch: 2 },
+  Na: { name: "sodium", ch: 1 }, K: { name: "potassium", ch: 1 }
+};
+var A = { // anions
+  Cl: { f: "Cl", ch: 1, poly: false, name: "chloride" }, SO4: { f: "SO4", ch: 2, poly: true, name: "sulfate" },
+  NO3: { f: "NO3", ch: 1, poly: true, name: "nitrate" }, CO3: { f: "CO3", ch: 2, poly: true, name: "carbonate" },
+  OH: { f: "OH", ch: 1, poly: true, name: "hydroxide" }, O: { f: "O", ch: 2, poly: false, name: "oxide" }
+};
+var ACIDS = {
+  HCl: { name: "Hydrochloric acid", f: "HCl", anion: "Cl" },
+  H2SO4: { name: "Sulfuric acid", f: "H2SO4", anion: "SO4" },
+  HNO3: { name: "Nitric acid", f: "HNO3", anion: "NO3" }
+};
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+function part(sym, n, poly) { return n === 1 ? sym : (poly ? "(" + sym + ")" + n : sym + n); }
+function formula(m, a) {
+  var l = M[m].ch * A[a].ch / gcd(M[m].ch, A[a].ch);
+  return part(m, l / M[m].ch, false) + part(A[a].f, l / A[a].ch, A[a].poly);
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function lc1(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+
+// The 40 reactions from Acid_Reactions_40.xlsx: [acid, metal, kind]
+var RAW = [];
+["HCl", "H2SO4", "HNO3"].forEach(function (ac) {
+  ["Mg", "Zn", "Fe", "Ca", "Al"].forEach(function (m) { RAW.push([ac, m, "metal"]); });
+  ["Mg", "Zn", "Ca", "Cu", "Na"].forEach(function (m) { RAW.push([ac, m, "carbonate"]); });
+});
+[["HCl", ["Na:OH", "K:OH", "Cu:O", "Mg:O"]], ["H2SO4", ["Na:OH", "K:OH", "Cu:O", "Mg:O"]], ["HNO3", ["Na:OH", "K:OH"]]].forEach(function (x) {
+  x[1].forEach(function (p) { var s = p.split(":"); RAW.push([x[0], s[0], s[1] === "OH" ? "hydroxide" : "oxide"]); });
+});
+
+var GROUPS = { metal: "Acid + metal", carbonate: "Acid + carbonate", base: "Acid + base" };
+var REACTIONS = RAW.map(function (r, i) {
+  var ac = ACIDS[r[0]], m = M[r[1]], kind = r[2];
+  var reagentName, reagentF;
+  if (kind === "metal") { reagentName = cap(m.plain || m.name); reagentF = r[1]; }
+  else {
+    var an = kind === "carbonate" ? "CO3" : kind === "hydroxide" ? "OH" : "O";
+    reagentName = cap(m.name) + " " + A[an].name; reagentF = formula(r[1], an);
+  }
+  var salt = formula(r[1], ac.anion);
+  var products = [salt].concat(kind === "metal" ? ["H2"] : kind === "carbonate" ? ["H2O", "CO2"] : ["H2O"]);
+  return {
+    id: i, acidKey: r[0], acid: ac, metal: r[1], kind: kind, group: kind === "metal" ? "metal" : kind === "carbonate" ? "carbonate" : "base",
+    reagentName: reagentName, reagentF: reagentF, saltName: m.name + " " + A[ac.anion].name, salt: salt, products: products
+  };
+});
+
+/* =================== HELPERS =================== */
+var $ = function (id) { return document.getElementById(id); };
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function fx(f) { return esc(f).replace(/([A-Za-z\)])(\d+)/g, '$1<span class="sub">$2</span>'); } // formula → HTML
+function store(k, v) {
+  try { if (v === undefined) return JSON.parse(localStorage.getItem("sik:" + k)); localStorage.setItem("sik:" + k, JSON.stringify(v)); } catch (e) { return null; }
+}
+function mmss(s) { s = Math.round(s); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function lev(a, b) {
+  var m = [], i, j; for (i = 0; i <= b.length; i++) m[i] = [i];
+  for (j = 0; j <= a.length; j++) m[0][j] = j;
+  for (i = 1; i <= b.length; i++) for (j = 1; j <= a.length; j++)
+    m[i][j] = b[i - 1] === a[j - 1] ? m[i - 1][j - 1] : Math.min(m[i - 1][j - 1] + 1, m[i][j - 1] + 1, m[i - 1][j] + 1);
+  return m[b.length][a.length];
+}
+// Normalise a typed salt name so harmless differences don't count as wrong
+function norm(s) {
+  return String(s || "").toLowerCase()
+    .replace(/sulph/g, "sulf").replace(/aluminum/g, "aluminium")
+    .replace(/\(\s*2\s*\)|\(\s*ii\s*\)/g, "(ii)")
+    .replace(/\b(copper|iron)\s*(?:ii|2)\b/g, "$1(ii)")
+    .replace(/\s*\(\s*/g, "(").replace(/\s*\)\s*/g, ") ")
+    .replace(/[.]/g, "").replace(/\s+/g, " ").trim();
+}
+
+/* =================== ERROR TYPES (for diagnosis) =================== */
+var ERR = {
+  timeout:     { label: "Ran out of time", tip: "Learn the patterns so you can answer quickly: metal → salt + hydrogen; carbonate → salt + water + carbon dioxide; base → salt + water." },
+  blank:       { label: "Left the answer blank", tip: "Always have a go — even a partly right answer helps you spot what to revise." },
+  wrongAcid:   { label: "Mixed up which salt each acid makes", tip: "Hydrochloric acid → chloride, sulfuric acid → sulfate, nitric acid → nitrate." },
+  keptReagent: { label: "Kept 'carbonate', 'oxide' or 'hydroxide' in the salt name", tip: "The second word of the salt comes from the acid, not from the carbonate or base." },
+  missingII:   { label: "Left out (II) for copper or iron salts", tip: "Copper and iron can form more than one ion, so write copper(II) and iron(II)." },
+  wrongMetal:  { label: "Wrong metal in the salt", tip: "The first word of the salt is the metal from the metal, carbonate or base." },
+  nonSalt:     { label: "Named another product instead of the salt", tip: "Hydrogen, water and carbon dioxide are the other products. The salt is metal + acid ending." },
+  spelling:    { label: "Spelling slip", tip: "Spelling counts in exams. Check -ide / -ate endings and chemical names." },
+  other:       { label: "Salt name not recognised", tip: "Salt name = metal name + acid ending (chloride, sulfate or nitrate)." },
+  noSalt:      { label: "Didn't pick the salt", tip: "Every acid reaction here makes a salt. Look for the metal joined to the acid's anion." },
+  saltFormula: { label: "Picked a salt formula with unbalanced charges", tip: "Balance the ion charges, e.g. Al³⁺ + SO₄²⁻ → Al₂(SO₄)₃; Ca²⁺ + NO₃⁻ → Ca(NO₃)₂." },
+  missedH2:    { label: "Missed hydrogen gas (acid + metal)", tip: "Acid + metal → salt + hydrogen." },
+  missedCO2:   { label: "Missed carbon dioxide (acid + carbonate)", tip: "Acid + carbonate → salt + water + carbon dioxide." },
+  missedH2O:   { label: "Missed water", tip: "Acids with bases or carbonates always make water." },
+  extraH2:     { label: "Added hydrogen when there's no metal", tip: "Only acid + metal gives hydrogen gas." },
+  extraCO2:    { label: "Added carbon dioxide when there's no carbonate", tip: "Only carbonates give carbon dioxide." },
+  extraH2O:    { label: "Added water to an acid + metal reaction", tip: "Acid + metal → salt + hydrogen only. No water." },
+  extraOther:  { label: "Picked something that isn't made", tip: "The only products are a salt, hydrogen, water and carbon dioxide." }
+};
+
+function diagnoseName(r, typed, timedOut) {
+  var t = norm(typed), key = norm(r.saltName);
+  if (t === key) return [];
+  if (!t) return [timedOut ? "timeout" : "blank"];
+  var acidWords = ["chloride", "sulfate", "nitrate"], reagentWords = ["carbonate", "oxide", "hydroxide"];
+  var want = A[r.acid.anion].name;
+  var metalBase = (M[r.metal].plain || M[r.metal].name);
+  var hasMetal = t.indexOf(metalBase) > -1;
+  var hasWant = t.indexOf(want) > -1;
+  var otherAcid = acidWords.filter(function (w) { return w !== want && t.indexOf(w) > -1; }).length > 0;
+  var reagentWord = reagentWords.some(function (w) { return new RegExp("\\b" + w + "\\b").test(t); });
+  if (!hasWant && !otherAcid && /hydrogen|water|carbon dioxide/.test(t)) return ["nonSalt"];
+  if (hasMetal && hasWant) {
+    if (M[r.metal].plain && t.indexOf("(ii)") < 0) return ["missingII"];
+    return ["spelling"];
+  }
+  if (hasMetal && otherAcid) return ["wrongAcid"];
+  if (hasMetal && reagentWord) return ["keptReagent"];
+  if (hasWant && !hasMetal) return [lev(t, key) <= 3 ? "spelling" : "wrongMetal"];
+  if (lev(t, key) <= 3) return ["spelling"];
+  if (otherAcid) return ["wrongAcid"];
+  return ["other"];
+}
+
+function diagnosePick(r, picked, timedOut) {
+  var correct = r.products, errs = [];
+  var setOk = picked.length === correct.length && correct.every(function (p) { return picked.indexOf(p) > -1; });
+  if (setOk) return [];
+  if (timedOut && picked.length === 0) return ["timeout"];
+  var salts = picked.filter(function (p) { return ["H2", "H2O", "CO2", "O2", "Cl2"].indexOf(p) < 0; });
+  if (picked.indexOf(r.salt) < 0) {
+    var d = optionMeta[r.id] || {};
+    if (salts.indexOf(d.ratio) > -1) errs.push("saltFormula");
+    else if (salts.indexOf(d.otherAcid) > -1) errs.push("wrongAcid");
+    else errs.push("noSalt");
+  }
+  var has = function (p) { return picked.indexOf(p) > -1; };
+  if (r.kind === "metal" && !has("H2")) errs.push("missedH2");
+  if (r.kind === "carbonate" && !has("CO2")) errs.push("missedCO2");
+  if (r.kind !== "metal" && !has("H2O")) errs.push("missedH2O");
+  if (r.kind !== "metal" && has("H2")) errs.push("extraH2");
+  if (r.kind !== "carbonate" && has("CO2")) errs.push("extraCO2");
+  if (r.kind === "metal" && has("H2O")) errs.push("extraH2O");
+  if (has("O2") || has("Cl2")) errs.push("extraOther");
+  if (timedOut) errs.push("timeout");
+  return errs.length ? errs : ["other"];
+}
+
+/* Stage 2 options: the salt, H2, H2O, CO2 + two tempting distractors */
+var optionMeta = {};
+function buildOptions(r) {
+  var others = Object.keys(ACIDS).filter(function (k) { return k !== r.acidKey; });
+  var otherAcidSalt = formula(r.metal, ACIDS[others[Math.floor(Math.random() * others.length)]].anion);
+  var ratio = null;
+  var an = A[r.acid.anion];
+  if (r.salt !== r.metal + an.f) ratio = r.metal + an.f;            // e.g. AlSO4, CaNO3, NaSO4
+  var extra = [otherAcidSalt, ratio || (Math.random() < .5 ? "O2" : "Cl2")];
+  optionMeta[r.id] = { otherAcid: otherAcidSalt, ratio: ratio };
+  var set = [r.salt, "H2", "H2O", "CO2"].concat(extra).filter(function (v, i, a) { return a.indexOf(v) === i; });
+  return shuffle(set);
+}
+
+/* Pick 5 per stage with every reaction type in each stage */
+function pickRound() {
+  for (var tries = 0; tries < 200; tries++) {
+    var st = pickOnce(), all = st[0].concat(st[1]), n = {};
+    all.forEach(function (r) { n[r.acidKey] = (n[r.acidKey] || 0) + 1; });
+    if (Object.keys(ACIDS).every(function (k) { return n[k] >= 2; })) return st;
+  }
+  return pickOnce();
+}
+function pickOnce() {
+  var pool = shuffle(REACTIONS), used = {}, stages = [];
+  for (var s = 0; s < 2; s++) {
+    var chosen = [];
+    ["metal", "carbonate", "base"].forEach(function (g) {
+      var r = pool.filter(function (x) { return x.group === g && !used[x.id]; })[0];
+      if (r) { chosen.push(r); used[r.id] = 1; }
+    });
+    pool.forEach(function (x) { if (chosen.length < CRATES_PER_STAGE && !used[x.id]) { chosen.push(x); used[x.id] = 1; } });
+    stages.push(shuffle(chosen));
+  }
+  return stages;
+}
+
+/* =================== SOUND =================== */
+var Sound = {
+  on: store("sound") !== false, ctx: null,
+  tone: function (f, type, d, g, delay) {
+    if (!this.on) return;
+    try {
+      this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      var t = this.ctx.currentTime + (delay || 0), o = this.ctx.createOscillator(), v = this.ctx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      v.gain.setValueAtTime(g, t); v.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(v); v.connect(this.ctx.destination); o.start(t); o.stop(t + d);
+    } catch (e) {}
+  },
+  ok: function () { this.tone(523, "sine", .15, .22); this.tone(659, "sine", .25, .22, .08); },
+  no: function () { this.tone(170, "sawtooth", .3, .18); },
+  tick: function () { this.tone(880, "square", .05, .05); },
+  end: function () { [262, 330, 392, 523].forEach(function (n, i) { Sound.tone(n, "triangle", .35, .18, i * .11); }); }
+};
+function paintSound() {
+  $("btn-sound").setAttribute("aria-label", Sound.on ? "Sound on" : "Sound off");
+  $("btn-sound").style.opacity = Sound.on ? 1 : .5;
+}
+$("btn-sound").addEventListener("click", function () { Sound.on = !Sound.on; store("sound", Sound.on); paintSound(); });
+paintSound();
+if (document.fullscreenEnabled) {
+  $("btn-full").hidden = false;
+  $("btn-full").addEventListener("click", function () {
+    if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {});
+  });
+}
+
+/* =================== GAME STATE =================== */
+var G = null;
+var screens = ["scr-start", "scr-intro", "scr-play", "scr-result"];
+function show(id) { screens.forEach(function (s) { $(s).hidden = s !== id; }); window.scrollTo(0, 0); }
+
+/* ---- start form ---- */
+(function initForm() {
+  var sel = $("in-cls");
+  CLASSES.forEach(function (c) { var o = document.createElement("option"); o.textContent = c; sel.appendChild(o); });
+  var s = store("student") || {};
+  if (s.name) $("in-name").value = s.name;
+  if (s.cls && CLASSES.indexOf(s.cls) > -1) sel.value = s.cls;
+  if (s.reg) $("in-reg").value = s.reg;
+  $("txt-best").textContent = store("acidfactory-best") || 0;
+})();
+
+$("form-start").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var name = $("in-name").value.trim(), cls = $("in-cls").value, reg = $("in-reg").value.trim();
+  var err = !name ? "Please type your name." : !cls ? "Please choose your class." : !/^\d{1,2}$/.test(reg) ? "Please type your register number (numbers only)." : "";
+  $("form-err").textContent = err;
+  if (err) return;
+  store("student", { name: name, cls: cls, reg: reg });
+  Sound.tone(1, "sine", .01, .0001); // unlock audio on iOS
+  startGame({ name: name, cls: cls, reg: reg });
+});
+
+function startGame(student) {
+  var stages = pickRound();
+  G = {
+    student: student, stages: stages, stage: 0, idx: 0, points: 0, streak: 0, bestStreak: 0,
+    log: [], startedAt: Date.now(), endedAt: 0, timer: null, busy: false, picked: []
+  };
+  openIntro();
+}
+
+function openIntro() {
+  var s1 = G.stage === 0;
+  $("intro-pill").textContent = "Stage " + (G.stage + 1) + " of 2";
+  $("intro-title").textContent = s1 ? "Name the salt" : "Pick the products";
+  $("intro-desc").textContent = s1
+    ? "Read the word equation and type the name of the salt made. You have " + SECONDS_STAGE1 + " seconds per crate."
+    : "Now in formulae. Tap EVERY product of the reaction, then ship it. You have " + SECONDS_STAGE2 + " seconds per crate.";
+  $("intro-rules").innerHTML = s1
+    ? '<div class="rule">Hydrochloric acid <i>→</i> …chloride</div><div class="rule">Sulfuric acid <i>→</i> …sulfate</div><div class="rule">Nitric acid <i>→</i> …nitrate</div>'
+    : '<div class="rule">Acid + metal <i>→</i> salt + hydrogen</div><div class="rule">Acid + carbonate <i>→</i> salt + water + carbon dioxide</div><div class="rule">Acid + base <i>→</i> salt + water</div>';
+  show("scr-intro");
+  $("btn-go").focus();
+}
+$("btn-go").addEventListener("click", function () { show("scr-play"); G.idx = 0; resetDots(); loadCrate(); });
+
+function resetDots() { Array.prototype.forEach.call($("dots").children, function (d) { d.className = ""; }); }
+
+/* ---- crates ---- */
+function current() { return G.stages[G.stage][G.idx]; }
+
+function loadCrate() {
+  var r = current(), s1 = G.stage === 0;
+  G.busy = false; G.picked = [];
+  $("fb").hidden = true;
+  $("ctl-type").hidden = !s1; $("ctl-pick").hidden = s1;
+  $("txt-stage").textContent = "STAGE " + (G.stage + 1) + " · CRATE " + (G.idx + 1) + "/" + CRATES_PER_STAGE;
+  $("dots").children[G.idx].className = "now";
+  $("crate").className = "crate"; $("crate").textContent = "?";
+  if (s1) {
+    $("eq").innerHTML = '<span>' + esc(r.acid.name) + '</span><span class="op">+</span><span>' + esc(r.reagentName) + '</span><span class="op">→</span><span class="q">salt?</span><span class="op">+</span><span>' +
+      (r.kind === "metal" ? "hydrogen" : r.kind === "carbonate" ? "water + carbon dioxide" : "water") + "</span>";
+    var inp = $("in-salt"); inp.value = ""; inp.disabled = false;
+    $("form-type").querySelector("button").disabled = false;
+    if (window.matchMedia("(pointer: fine)").matches) inp.focus();
+  } else {
+    $("eq").innerHTML = "<span>" + fx(r.acid.f) + '</span><span class="op">+</span><span>' + fx(r.reagentF) + '</span><span class="op">→</span><span class="q">?</span>';
+    var box = $("opts"); box.innerHTML = "";
+    buildOptions(r).forEach(function (f) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "opt"; b.dataset.f = f; b.setAttribute("aria-pressed", "false"); b.innerHTML = fx(f);
+      b.addEventListener("click", function () {
+        if (G.busy) return;
+        var on = b.getAttribute("aria-pressed") !== "true";
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+        if (on) G.picked.push(f); else G.picked.splice(G.picked.indexOf(f), 1);
+        Sound.tick();
+      });
+      box.appendChild(b);
+    });
+    $("btn-ship").disabled = false; $("btn-ship").hidden = false;
+  }
+  runTimer(s1 ? SECONDS_STAGE1 : SECONDS_STAGE2);
+}
+
+function runTimer(total) {
+  cancelAnimationFrame(G.timer);
+  var belt = $("belt"), crate = $("crate"), ring = $("ring"), secs = $("txt-secs");
+  belt.classList.remove("stopped");
+  var t0 = performance.now(), lastShown = -1;
+  G.crateTotal = total; G.crateLeft = total;
+  function frame(now) {
+    var el = (now - t0) / 1000, left = Math.max(0, total - el), frac = Math.min(1, el / total);
+    G.crateLeft = left;
+    var travel = belt.clientWidth - crate.offsetWidth - 70;
+    crate.style.transform = "translateX(" + Math.max(0, travel * frac) + "px)";
+    var pct = (left / total) * 100;
+    ring.style.background = "conic-gradient(var(--orange) 0 " + pct + "%, #fff 0)";
+    var shown = Math.ceil(left);
+    if (shown !== lastShown) { secs.textContent = shown; lastShown = shown; }
+    var warn = left <= 5;
+    ring.classList.toggle("warn", warn); crate.classList.toggle("warn", warn);
+    if (left <= 0) { submit(true); return; }
+    G.timer = requestAnimationFrame(frame);
+  }
+  G.timer = requestAnimationFrame(frame);
+}
+
+$("form-type").addEventListener("submit", function (e) { e.preventDefault(); submit(false); });
+$("btn-ship").addEventListener("click", function () { submit(false); });
+$("in-salt").addEventListener("focus", function () { document.body.classList.add("typing"); });
+$("in-salt").addEventListener("blur", function () { document.body.classList.remove("typing"); });
+
+function submit(timedOut) {
+  if (G.busy) return;
+  G.busy = true;
+  document.body.classList.remove("typing");
+  cancelAnimationFrame(G.timer);
+  $("belt").classList.add("stopped");
+  var r = current(), s1 = G.stage === 0, errs, answer;
+  if (s1) {
+    answer = $("in-salt").value.trim();
+    $("in-salt").disabled = true; $("form-type").querySelector("button").disabled = true;
+    errs = diagnoseName(r, answer, timedOut);
+  } else {
+    answer = G.picked.slice();
+    $("btn-ship").disabled = true; $("btn-ship").hidden = true;
+    errs = diagnosePick(r, answer, timedOut);
+    Array.prototype.forEach.call($("opts").children, function (b) {
+      var f = b.dataset.f, isRight = r.products.indexOf(f) > -1, isPicked = answer.indexOf(f) > -1;
+      if (isPicked && isRight) b.classList.add("right");
+      if (isPicked && !isRight) b.classList.add("wrong");
+      if (!isPicked && isRight) b.classList.add("missed");
+    });
+  }
+  var ok = errs.length === 0, gained = 0;
+  if (ok) {
+    G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
+    gained = (100 + Math.round(G.crateLeft) * 10) * Math.min(G.streak, 3);
+    G.points += gained;
+  } else G.streak = 0;
+  G.log.push({ stage: G.stage + 1, r: r, answer: answer, ok: ok, errs: errs, timedOut: timedOut, secs: +(G.crateTotal - G.crateLeft).toFixed(1) });
+
+  $("txt-points").textContent = G.points;
+  var combo = $("txt-combo");
+  combo.hidden = G.streak < 2;
+  if (G.streak >= 2) { combo.textContent = Math.min(G.streak, 3) + "× combo!"; combo.classList.remove("pop"); void combo.offsetWidth; combo.classList.add("pop"); }
+  $("dots").children[G.idx].className = ok ? "ok" : "no";
+  $("crate").className = "crate " + (ok ? "ok" : "no"); $("crate").textContent = ok ? "✓" : "✗";
+
+  var fb = $("fb");
+  fb.className = "feedback " + (ok ? "ok" : "no");
+  var key = s1 ? cap(r.saltName) : r.products.map(fx).join(" + ");
+  $("fb-title").textContent = ok ? "Correct! +" + gained : (timedOut ? "Time's up!" : "Not quite");
+  $("fb-body").innerHTML = ok
+    ? (s1 ? "Shipped: <b>" + esc(cap(r.saltName)) + "</b>" : "All products loaded.")
+    : 'Answer: <span class="ans">' + (s1 ? esc(key) : key) + "</span>";
+  var tip = ok ? "" : ERR[errs[0]].tip;
+  $("fb-tip").hidden = !tip; $("fb-tip").textContent = tip;
+  $("btn-next").textContent = (G.idx === CRATES_PER_STAGE - 1) ? (G.stage === 0 ? "On to Stage 2 →" : "See my results →") : "Next crate →";
+  fb.hidden = false;
+  $("ctl-type").hidden = true;
+  if (ok) Sound.ok(); else Sound.no();
+  if (ok) { G.autoNext = setTimeout(next, 1100); $("btn-next").hidden = true; }
+  else { $("btn-next").hidden = false; $("btn-next").focus({ preventScroll: true }); fb.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+}
+
+$("btn-next").addEventListener("click", next);
+function next() {
+  clearTimeout(G.autoNext);
+  if (G.idx < CRATES_PER_STAGE - 1) { G.idx++; loadCrate(); return; }
+  if (G.stage === 0) { G.stage = 1; G.idx = 0; openIntro(); return; }
+  finish();
+}
+
+/* =================== RESULTS =================== */
+function summarise() {
+  var log = G.log, correct = log.filter(function (x) { return x.ok; }).length;
+  var byGroup = {}, byAcid = {}, errCount = {};
+  log.forEach(function (x) {
+    var g = byGroup[x.r.group] = byGroup[x.r.group] || [0, 0]; g[1]++; if (x.ok) g[0]++;
+    var a = byAcid[x.r.acidKey] = byAcid[x.r.acidKey] || [0, 0]; a[1]++; if (x.ok) a[0]++;
+    x.errs.forEach(function (e) { errCount[e] = (errCount[e] || 0) + 1; });
+  });
+  var errs = Object.keys(errCount).sort(function (a, b) { return errCount[b] - errCount[a]; });
+  return { correct: correct, total: log.length, byGroup: byGroup, byAcid: byAcid, errCount: errCount, errs: errs };
+}
+
+function finish() {
+  G.endedAt = Date.now();
+  var S = summarise(), pct = Math.round(100 * S.correct / S.total), secs = (G.endedAt - G.startedAt) / 1000;
+  var best = store("acidfactory-best") || 0;
+  if (G.points > best) store("acidfactory-best", G.points);
+
+  $("res-ring").style.setProperty("--p", pct);
+  $("res-pct").textContent = pct + "%";
+  $("res-correct").textContent = S.correct + "/" + S.total;
+  $("res-acc").textContent = pct + "%";
+  $("res-time").textContent = mmss(secs);
+  $("res-points").textContent = G.points;
+  $("res-title").textContent = pct >= 80 ? "Factory star, " + G.student.name.split(" ")[0] + "!" : pct >= 50 ? "Good shift!" : "Shift complete";
+  $("res-msg").textContent = pct >= 80 ? "You know your acid reactions. Best combo: " + G.bestStreak + " in a row."
+    : pct >= 50 ? "You're getting there. Check the list below to see what to fix."
+    : "Let's fix a few things. Read the tips below, then play again.";
+
+  var rows = [];
+  ["metal", "carbonate", "base"].forEach(function (g) { if (S.byGroup[g]) rows.push([GROUPS[g], S.byGroup[g]]); });
+  ["HCl", "H2SO4", "HNO3"].forEach(function (a) { if (S.byAcid[a]) rows.push([ACIDS[a].name, S.byAcid[a]]); });
+  $("res-bars").innerHTML = rows.map(function (r) {
+    var p = Math.round(100 * r[1][0] / r[1][1]);
+    return '<div class="bar-row"><span>' + esc(r[0]) + '</span><div class="bar"><i class="' + (p < 60 ? "low" : "") + '" style="width:' + p + '%"></i></div><span class="n">' + r[1][0] + "/" + r[1][1] + "</span></div>";
+  }).join("");
+
+  $("res-weak").innerHTML = S.errs.length
+    ? S.errs.slice(0, 4).map(function (e) { return "<li><b>" + esc(ERR[e].label) + (S.errCount[e] > 1 ? " ×" + S.errCount[e] : "") + "</b><span>" + esc(ERR[e].tip) + "</span></li>"; }).join("")
+    : '<li class="good"><b>Nothing to fix this time!</b><span>Try to beat your points score.</span></li>';
+
+  var wrong = G.log.filter(function (x) { return !x.ok; });
+  $("res-review").innerHTML = wrong.length ? wrong.map(function (x) {
+    if (x.stage === 1) return "<li>" + esc(x.r.acid.name) + " + " + esc(lc1(x.r.reagentName)) + '<br><span class="you">You: ' + esc(x.answer || "(no answer)") + '</span> · <span class="key">' + esc(cap(x.r.saltName)) + "</span></li>";
+    return "<li>" + fx(x.r.acid.f) + " + " + fx(x.r.reagentF) + '<br><span class="you">You: ' + (x.answer.length ? x.answer.map(fx).join(", ") : "(nothing)") + '</span> · <span class="key">' + x.r.products.map(fx).join(" + ") + "</span></li>";
+  }).join("") : "<li>No mistakes. Well done!</li>";
+
+  show("scr-result");
+  Sound.end();
+  if (pct >= 80) Confetti.go();
+  sendResults(S, pct, secs);
+}
+
+function buildPayload(S, pct, secs) {
+  var part = function (obj, keys, names) {
+    return keys.filter(function (k) { return obj[k]; }).map(function (k) { return names[k] + " " + obj[k][0] + "/" + obj[k][1]; }).join(", ");
+  };
+  var summary = "By type: " + part(S.byGroup, ["metal", "carbonate", "base"], { metal: "metals", carbonate: "carbonates", base: "bases" }) +
+    " | By acid: " + part(S.byAcid, ["HCl", "H2SO4", "HNO3"], { HCl: "HCl", H2SO4: "H2SO4", HNO3: "HNO3" }) +
+    " | Errors: " + (S.errs.length ? S.errs.map(function (e) { return ERR[e].label + " x" + S.errCount[e]; }).join("; ") : "none") +
+    " | Best combo: " + G.bestStreak;
+  var wrong = G.log.filter(function (x) { return !x.ok; }).map(function (x) {
+    if (x.stage === 1) return "S1 " + x.r.acid.name + " + " + lc1(x.r.reagentName) + ": typed '" + (x.answer || "-") + "' (ans " + x.r.saltName + ")";
+    return "S2 " + x.r.acid.f + " + " + x.r.reagentF + ": picked " + (x.answer.join(", ") || "nothing") + " (ans " + x.r.products.join(", ") + ")";
+  }).join(" | ");
+  return {
+    course: SHEET_TAB, chapter: ACTIVITY,
+    name: G.student.name, cls: G.student.cls, reg: G.student.reg,
+    score: S.correct, total: S.total, wrong: wrong || "None",
+    time: Math.round(secs), points: G.points, summary: summary
+  };
+}
+
+function sendResults(S, pct, secs) {
+  var payload = G.payload = buildPayload(S, pct, secs);
+  var box = $("send"), msg = $("send-msg"), btn = $("btn-resend");
+  box.className = "send span"; btn.hidden = true;
+  msg.textContent = "Sending your results to Ms Khoo…";
+  if (!SUBMIT_URL) { msg.textContent = "Results not sent (no Google Sheet link set up)."; return; }
+  fetch(SUBMIT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) })
+    .then(function () { msg.textContent = "✓ Sent! Ms Khoo has your results."; })
+    .catch(function () { box.className = "send span err"; msg.textContent = "Couldn't send. Check your internet, then tap Try again."; btn.hidden = false; });
+}
+$("btn-resend").addEventListener("click", function () {
+  var box = $("send"); $("btn-resend").hidden = true; $("send-msg").textContent = "Sending…";
+  fetch(SUBMIT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(G.payload) })
+    .then(function () { box.className = "send span"; $("send-msg").textContent = "✓ Sent! Ms Khoo has your results."; })
+    .catch(function () { $("send-msg").textContent = "Still couldn't send. Try again when you're online."; $("btn-resend").hidden = false; });
+});
+
+$("btn-again").addEventListener("click", function () { Confetti.stop(); startGame(G.student); });
+
+/* =================== CONFETTI =================== */
+var Confetti = {
+  c: $("confetti"), p: [], on: false,
+  go: function () {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var c = this.c, w = c.width = innerWidth, h = c.height = innerHeight, cols = ["#FF8243", "#FFC0CB", "#FCE883", "#069494", "#1F2A2E"];
+    c.hidden = false; this.on = true; this.p = [];
+    for (var i = 0; i < 110; i++) this.p.push({ x: Math.random() * w, y: -Math.random() * h, s: 6 + Math.random() * 8, v: 2 + Math.random() * 3, a: Math.random() * 6, col: cols[i % cols.length] });
+    var self = this, ctx = c.getContext("2d");
+    (function loop() {
+      if (!self.on) return;
+      ctx.clearRect(0, 0, w, h);
+      var alive = false;
+      self.p.forEach(function (q) {
+        q.y += q.v; q.a += .08; q.x += Math.sin(q.a) * 1.2;
+        if (q.y < h + 20) alive = true;
+        ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.a);
+        ctx.fillStyle = q.col; ctx.strokeStyle = "#1F2A2E"; ctx.lineWidth = 1.5;
+        ctx.fillRect(-q.s / 2, -q.s / 4, q.s, q.s / 2); ctx.strokeRect(-q.s / 2, -q.s / 4, q.s, q.s / 2);
+        ctx.restore();
+      });
+      if (alive) requestAnimationFrame(loop); else self.stop();
+    })();
+  },
+  stop: function () { this.on = false; this.c.hidden = true; }
+};
+
+// for testing in the browser console
+window.__acidFactory = { REACTIONS: REACTIONS, norm: norm, diagnoseName: diagnoseName, diagnosePick: diagnosePick, state: function () { return G; } };
+})();
+</script>
 </body>
 </html>
