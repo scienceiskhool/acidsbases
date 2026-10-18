@@ -137,7 +137,7 @@ label.f input:focus, label.f select:focus { outline: 3px solid var(--yellow); ou
 .type-row input:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
 .type-help { font-size: .82rem; color: var(--muted); margin-top: -4px; }
 .opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.opt { font-weight: 800; font-size: 1.2rem; padding: 14px 4px; border: var(--b); border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--ink); transition: transform .08s, box-shadow .08s, background .1s; user-select: none; -webkit-user-select: none; }
+.opt { font-weight: 800; font-size: 1.05rem; line-height: 1.25; padding: 12px 6px; border: var(--b); border-radius: 16px; background: #fff; box-shadow: 0 4px 0 var(--ink); transition: transform .08s, box-shadow .08s, background .1s; user-select: none; -webkit-user-select: none; }
 .opt[aria-pressed="true"] { background: var(--yellow); transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .opt.right { background: #D8F3E4; }
 .opt.wrong { background: var(--orange-tint); text-decoration: line-through; }
@@ -250,7 +250,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <h2>Clock in</h2>
       <div class="stages">
         <div class="stage-card"><b>Stage 1 · Name it</b><span>Type the name of the salt made. 5 crates.</span></div>
-        <div class="stage-card s2"><b>Stage 2 · Formulae</b><span>Tap every product of the reaction. 5 crates.</span></div>
+        <div class="stage-card s2"><b>Stage 2 · Products</b><span>Tap every product in the word equation. 5 crates.</span></div>
       </div>
       <div class="fields">
         <label class="f full" for="in-name">Name<input id="in-name" name="name" maxlength="60" autocomplete="name" required></label>
@@ -362,7 +362,7 @@ var SUBMIT_URL = "https://script.google.com/macros/s/AKfycbxCTjRCQzLlWXmmY-5R0p7
 var SHEET_TAB = "Acid Factory";              // tab name in your Google Sheet
 var ACTIVITY = "Acid reactions game";        // shows in the "Chapter" column
 var SECONDS_STAGE1 = 20;                     // time per crate when typing names
-var SECONDS_STAGE2 = 15;                     // time per crate when picking formulae
+var SECONDS_STAGE2 = 15;                     // time per crate when picking products
 var CRATES_PER_STAGE = 5;
 var CLASSES = [];
 ["S1", "S2", "S3", "S4"].forEach(function (l) {
@@ -416,7 +416,7 @@ var REACTIONS = RAW.map(function (r, i) {
     reagentName = cap(m.name) + " " + A[an].name; reagentF = formula(r[1], an);
   }
   var salt = formula(r[1], ac.anion);
-  var products = [salt].concat(kind === "metal" ? ["H2"] : kind === "carbonate" ? ["H2O", "CO2"] : ["H2O"]);
+  var products = [m.name + " " + A[ac.anion].name].concat(kind === "metal" ? ["hydrogen"] : kind === "carbonate" ? ["water", "carbon dioxide"] : ["water"]);
   return {
     id: i, acidKey: r[0], acid: ac, metal: r[1], kind: kind, group: kind === "metal" ? "metal" : kind === "carbonate" ? "carbonate" : "base",
     reagentName: reagentName, reagentF: reagentF, saltName: m.name + " " + A[ac.anion].name, salt: salt, products: products
@@ -460,15 +460,15 @@ var ERR = {
   nonSalt:     { label: "Named another product instead of the salt", tip: "Hydrogen, water and carbon dioxide are the other products. The salt is metal + acid ending." },
   spelling:    { label: "Spelling slip", tip: "Spelling counts in exams. Check -ide / -ate endings and chemical names." },
   other:       { label: "Salt name not recognised", tip: "Salt name = metal name + acid ending (chloride, sulfate or nitrate)." },
-  noSalt:      { label: "Didn't pick the salt", tip: "Every acid reaction here makes a salt. Look for the metal joined to the acid's anion." },
-  saltFormula: { label: "Picked a salt formula with unbalanced charges", tip: "Balance the ion charges, e.g. Al³⁺ + SO₄²⁻ → Al₂(SO₄)₃; Ca²⁺ + NO₃⁻ → Ca(NO₃)₂." },
+  noSalt:      { label: "Didn't pick the salt", tip: "Every acid reaction here makes a salt: the metal's name + the acid ending (chloride, sulfate or nitrate)." },
+  pickedReactant: { label: "Picked a reactant as a product", tip: "The carbonate or base gets used up. Its metal ends up in the salt, so it isn't a product." },
   missedH2:    { label: "Missed hydrogen gas (acid + metal)", tip: "Acid + metal → salt + hydrogen." },
   missedCO2:   { label: "Missed carbon dioxide (acid + carbonate)", tip: "Acid + carbonate → salt + water + carbon dioxide." },
   missedH2O:   { label: "Missed water", tip: "Acids with bases or carbonates always make water." },
   extraH2:     { label: "Added hydrogen when there's no metal", tip: "Only acid + metal gives hydrogen gas." },
   extraCO2:    { label: "Added carbon dioxide when there's no carbonate", tip: "Only carbonates give carbon dioxide." },
   extraH2O:    { label: "Added water to an acid + metal reaction", tip: "Acid + metal → salt + hydrogen only. No water." },
-  extraOther:  { label: "Picked something that isn't made", tip: "The only products are a salt, hydrogen, water and carbon dioxide." }
+  extraOther:  { label: "Picked oxygen as a product", tip: "None of these reactions make oxygen. The only products are a salt, hydrogen, water and carbon dioxide." }
 };
 
 function diagnoseName(r, typed, timedOut) {
@@ -500,36 +500,28 @@ function diagnosePick(r, picked, timedOut) {
   var setOk = picked.length === correct.length && correct.every(function (p) { return picked.indexOf(p) > -1; });
   if (setOk) return [];
   if (timedOut && picked.length === 0) return ["timeout"];
-  var salts = picked.filter(function (p) { return ["H2", "H2O", "CO2", "O2", "Cl2"].indexOf(p) < 0; });
-  if (picked.indexOf(r.salt) < 0) {
-    var d = optionMeta[r.id] || {};
-    if (salts.indexOf(d.ratio) > -1) errs.push("saltFormula");
-    else if (salts.indexOf(d.otherAcid) > -1) errs.push("wrongAcid");
-    else errs.push("noSalt");
-  }
-  var has = function (p) { return picked.indexOf(p) > -1; };
-  if (r.kind === "metal" && !has("H2")) errs.push("missedH2");
-  if (r.kind === "carbonate" && !has("CO2")) errs.push("missedCO2");
-  if (r.kind !== "metal" && !has("H2O")) errs.push("missedH2O");
-  if (r.kind !== "metal" && has("H2")) errs.push("extraH2");
-  if (r.kind !== "carbonate" && has("CO2")) errs.push("extraCO2");
-  if (r.kind === "metal" && has("H2O")) errs.push("extraH2O");
-  if (has("O2") || has("Cl2")) errs.push("extraOther");
+  var has = function (p) { return picked.indexOf(p) > -1; }, d = optionMeta[r.id] || {};
+  if (!has(r.products[0])) errs.push(has(d.otherAcid) ? "wrongAcid" : has(d.reactant) ? "pickedReactant" : "noSalt");
+  else if (d.reactant && has(d.reactant)) errs.push("pickedReactant");
+  if (r.kind === "metal" && !has("hydrogen")) errs.push("missedH2");
+  if (r.kind === "carbonate" && !has("carbon dioxide")) errs.push("missedCO2");
+  if (r.kind !== "metal" && !has("water")) errs.push("missedH2O");
+  if (r.kind !== "metal" && has("hydrogen")) errs.push("extraH2");
+  if (r.kind !== "carbonate" && has("carbon dioxide")) errs.push("extraCO2");
+  if (r.kind === "metal" && has("water")) errs.push("extraH2O");
+  if (has("oxygen")) errs.push("extraOther");
   if (timedOut) errs.push("timeout");
   return errs.length ? errs : ["other"];
 }
 
-/* Stage 2 options: the salt, H2, H2O, CO2 + two tempting distractors */
+/* Stage 2 options (all in words): the salt, hydrogen, water, carbon dioxide + two tempting distractors */
 var optionMeta = {};
 function buildOptions(r) {
   var others = Object.keys(ACIDS).filter(function (k) { return k !== r.acidKey; });
-  var otherAcidSalt = formula(r.metal, ACIDS[others[Math.floor(Math.random() * others.length)]].anion);
-  var ratio = null;
-  var an = A[r.acid.anion];
-  if (r.salt !== r.metal + an.f) ratio = r.metal + an.f;            // e.g. AlSO4, CaNO3, NaSO4
-  var extra = [otherAcidSalt, ratio || (Math.random() < .5 ? "O2" : "Cl2")];
-  optionMeta[r.id] = { otherAcid: otherAcidSalt, ratio: ratio };
-  var set = [r.salt, "H2", "H2O", "CO2"].concat(extra).filter(function (v, i, a) { return a.indexOf(v) === i; });
+  var otherAcidSalt = M[r.metal].name + " " + A[ACIDS[others[Math.floor(Math.random() * others.length)]].anion].name; // e.g. magnesium sulfate for HCl
+  var reactant = r.kind === "metal" ? null : lc1(r.reagentName);                                                  // e.g. magnesium carbonate
+  optionMeta[r.id] = { otherAcid: otherAcidSalt, reactant: reactant };
+  var set = [r.products[0], "hydrogen", "water", "carbon dioxide", otherAcidSalt, reactant || "oxygen"].filter(function (v, i, a) { return a.indexOf(v) === i; });
   return shuffle(set);
 }
 
@@ -630,7 +622,7 @@ function openIntro() {
   $("intro-title").textContent = s1 ? "Name the salt" : "Pick the products";
   $("intro-desc").textContent = s1
     ? "Read the word equation and type the name of the salt made. You have " + SECONDS_STAGE1 + " seconds per crate."
-    : "Now in formulae. Tap EVERY product of the reaction, then ship it. You have " + SECONDS_STAGE2 + " seconds per crate.";
+    : "Read the word equation. Tap EVERY product of the reaction, then ship it. You have " + SECONDS_STAGE2 + " seconds per crate.";
   $("intro-rules").innerHTML = s1
     ? '<div class="rule">Hydrochloric acid <i>→</i> …chloride</div><div class="rule">Sulfuric acid <i>→</i> …sulfate</div><div class="rule">Nitric acid <i>→</i> …nitrate</div>'
     : '<div class="rule">Acid + metal <i>→</i> salt + hydrogen</div><div class="rule">Acid + carbonate <i>→</i> salt + water + carbon dioxide</div><div class="rule">Acid + base <i>→</i> salt + water</div>';
@@ -659,11 +651,11 @@ function loadCrate() {
     $("form-type").querySelector("button").disabled = false;
     if (window.matchMedia("(pointer: fine)").matches) inp.focus();
   } else {
-    $("eq").innerHTML = "<span>" + fx(r.acid.f) + '</span><span class="op">+</span><span>' + fx(r.reagentF) + '</span><span class="op">→</span><span class="q">?</span>';
+    $("eq").innerHTML = "<span>" + esc(r.acid.name) + '</span><span class="op">+</span><span>' + esc(r.reagentName) + '</span><span class="op">→</span><span class="q">?</span>';
     var box = $("opts"); box.innerHTML = "";
     buildOptions(r).forEach(function (f) {
       var b = document.createElement("button");
-      b.type = "button"; b.className = "opt"; b.dataset.f = f; b.setAttribute("aria-pressed", "false"); b.innerHTML = fx(f);
+      b.type = "button"; b.className = "opt"; b.dataset.f = f; b.setAttribute("aria-pressed", "false"); b.textContent = f;
       b.addEventListener("click", function () {
         if (G.busy) return;
         var on = b.getAttribute("aria-pressed") !== "true";
@@ -745,7 +737,7 @@ function submit(timedOut) {
 
   var fb = $("fb");
   fb.className = "feedback " + (ok ? "ok" : "no");
-  var key = s1 ? cap(r.saltName) : r.products.map(fx).join(" + ");
+  var key = s1 ? cap(r.saltName) : esc(r.products.join(" + "));
   $("fb-title").textContent = ok ? "Correct! +" + gained : (timedOut ? "Time's up!" : "Not quite");
   $("fb-body").innerHTML = ok
     ? (s1 ? "Shipped: <b>" + esc(cap(r.saltName)) + "</b>" : "All products loaded.")
@@ -813,7 +805,7 @@ function finish() {
   var wrong = G.log.filter(function (x) { return !x.ok; });
   $("res-review").innerHTML = wrong.length ? wrong.map(function (x) {
     if (x.stage === 1) return "<li>" + esc(x.r.acid.name) + " + " + esc(lc1(x.r.reagentName)) + '<br><span class="you">You: ' + esc(x.answer || "(no answer)") + '</span> · <span class="key">' + esc(cap(x.r.saltName)) + "</span></li>";
-    return "<li>" + fx(x.r.acid.f) + " + " + fx(x.r.reagentF) + '<br><span class="you">You: ' + (x.answer.length ? x.answer.map(fx).join(", ") : "(nothing)") + '</span> · <span class="key">' + x.r.products.map(fx).join(" + ") + "</span></li>";
+    return "<li>" + esc(x.r.acid.name) + " + " + esc(lc1(x.r.reagentName)) + '<br><span class="you">You: ' + (x.answer.length ? esc(x.answer.join(", ")) : "(nothing)") + '</span> · <span class="key">' + esc(x.r.products.join(" + ")) + "</span></li>";
   }).join("") : "<li>No mistakes. Well done!</li>";
 
   show("scr-result");
@@ -832,7 +824,7 @@ function buildPayload(S, pct, secs) {
     " | Best combo: " + G.bestStreak;
   var wrong = G.log.filter(function (x) { return !x.ok; }).map(function (x) {
     if (x.stage === 1) return "S1 " + x.r.acid.name + " + " + lc1(x.r.reagentName) + ": typed '" + (x.answer || "-") + "' (ans " + x.r.saltName + ")";
-    return "S2 " + x.r.acid.f + " + " + x.r.reagentF + ": picked " + (x.answer.join(", ") || "nothing") + " (ans " + x.r.products.join(", ") + ")";
+    return "S2 " + x.r.acid.name + " + " + lc1(x.r.reagentName) + ": picked " + (x.answer.join(", ") || "nothing") + " (ans " + x.r.products.join(", ") + ")";
   }).join(" | ");
   return {
     course: SHEET_TAB, chapter: ACTIVITY,
